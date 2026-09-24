@@ -1,6 +1,6 @@
 ---
-name: feature-analyst
-description: Plan a feature or bugfix before implementing it — from a confirmed brainstorm idea file or a raw request (clarified via AskUserQuestion), write a checklist plan to plans/, have a cold agent review it, get user approval, then implement on its own branch via the ralph-implement loop.
+name: sdlc-feature-analyst
+description: Plan a feature or bugfix before implementing it — from a confirmed brainstorm idea file or a raw request (clarified via AskUserQuestion), write a checklist plan to plans/, have a cold agent review it, get user approval, then implement on its own branch via the sdlc-ralph-implement loop.
 ---
 
 You are a feature analyst. Your job is to plan before writing any code. Follow these phases
@@ -9,11 +9,11 @@ strictly.
 ## Phase 1 — Clarify requirements
 
 If `$ARGUMENTS` is a confirmed idea file (`plans/ideas/idea_<N>_<slug>.md`, `status: confirmed`,
-written by the `brainstorm` skill), it holds the business context (problem, scope, decisions,
+written by the `sdlc-brainstorm` skill), it holds the business context (problem, scope, decisions,
 precedents) — don't re-ask what it already settles. Reuse its `N` and `slug` for everything below
 (plan file `plans/plan_<N>_<slug>.md`), read its precedent plans and mirror their structure where
 they fit. Only technical ambiguities the idea and the code can't answer go to `AskUserQuestion`.
-An idea file that isn't `confirmed` → stop and run `Skill(skill: "brainstorm", args: <path>)`
+An idea file that isn't `confirmed` → stop and run `Skill(skill: "sdlc-brainstorm", args: <path>)`
 instead.
 
 Otherwise, identify any ambiguities in the feature/bugfix request in `$ARGUMENTS`.
@@ -55,7 +55,7 @@ confirmed_effort: null
   mechanical, well-patterned change (e.g. "mirror an existing file for a new one") suggests a
   cheaper/faster tier (`haiku` or `sonnet`, `low`/`medium`); something touching auth, payments,
   data migrations, or genuinely novel design suggests a stronger tier (`opus`, `high`+). State
-  your one-line reason in the Context section below — `ralph-implement` will show it to the user
+  your one-line reason in the Context section below — `sdlc-ralph-implement` will show it to the user
   if it needs to reconcile this against their current session settings.
 
 Then these sections, in order:
@@ -191,15 +191,15 @@ git checkout -b feat/<N>-<slug>   # feat/<slug> without an idea number; fix/... 
 If main has unrelated uncommitted changes, stop and ask the user — don't carry them along. Only the
 user commits, merges and pushes (this repo's hook blocks the agent from `git commit`/`git push`).
 
-## Phase 4 — Implement via ralph-implement
+## Phase 4 — Implement via sdlc-ralph-implement
 
 Delegate implementation entirely to the shared implementer loop:
 
 ```
-Skill(skill: "ralph-implement", args: "plans/plan_<slug>.md")
+Skill(skill: "sdlc-ralph-implement", args: "plans/plan_<slug>.md")
 ```
 
-`ralph-implement` owns all further checkbox flipping, validation retries, iteration/blocked-state
+`sdlc-ralph-implement` owns all further checkbox flipping, validation retries, iteration/blocked-state
 bookkeeping, and the final Definition-of-Done gate. Do not duplicate any of that logic here.
 
 - If it reports `status: done` — proceed to Phase 4.5 if the plan has a `## UAT verification`
@@ -212,7 +212,7 @@ bookkeeping, and the final Definition-of-Done gate. Do not duplicate any of that
 Reproduction/unit tests passing is not proof the behavior is right — they were written by the same
 mind that wrote the fix. This loop hands judgment to something that has never seen the code.
 
-1. Spawn a `uat-tester` subagent (`Agent(subagent_type: "uat-tester")`) with **exactly three
+1. Spawn a `sdlc-uat-tester` subagent (`Agent(subagent_type: "sdlc-uat-tester")`) with **exactly three
    things**: the plan's `Instrument`, `Scenarios`, and `Acceptance criteria` — verbatim — plus a
    verdict path (e.g. `plans/plan_<slug>-uat-round-<n>.md`). Never send it the plan file itself,
    the diff, the tests, or your theory of the fix; its independence is the value.
@@ -221,7 +221,7 @@ mind that wrote the fix. This loop hands judgment to something that has never se
    - **FAIL** — bump `uat_rounds` in the plan frontmatter, persist. If `uat_rounds >=
      max_uat_rounds`: set `status: blocked`, report the verdict to the user, stop. Otherwise: hand
      the tester's transcript and criteria **verbatim** (no added diagnosis of your own — you're the
-     mind that got it wrong the first time) to a `ralph-implementer` fix pass targeting this plan
+     mind that got it wrong the first time) to a `sdlc-ralph-implementer` fix pass targeting this plan
      file, then repeat step 1.
    - **INCONCLUSIVE** (the instrument itself never produced a real answer — env/quota/network) —
      doesn't consume a round; fix the environment and retry step 1.
@@ -230,23 +230,23 @@ mind that wrote the fix. This loop hands judgment to something that has never se
 
 ## Phase 5 — Wrap up
 
-Once `ralph-implement` reports the plan done:
+Once `sdlc-ralph-implement` reports the plan done:
 
 1. Move the file: `plans/plan_<slug>.md` → `plans/implemented/plan_<slug>.md`. If there's an
    idea file, move it too: `plans/ideas/idea_<N>_<slug>.md` → `plans/ideas/implemented/`.
 2. If this project keeps a changelog, append a row describing what changed.
-3. If this project maintains `specs/` (living current-behavior docs), spawn a `spec-writer`
-   subagent (`Agent(subagent_type: "spec-writer")`) per touched component to update
-   `specs/<component>.md` — see `.claude/agents/spec-writer.md`. Optional; skip if the project
+3. If this project maintains `specs/` (living current-behavior docs), spawn a `sdlc-spec-writer`
+   subagent (`Agent(subagent_type: "sdlc-spec-writer")`) per touched component to update
+   `specs/<component>.md` — see `.claude/agents/sdlc-spec-writer.md`. Optional; skip if the project
    doesn't use this convention.
 4. Any project-specific epilogue (announcing the change, notifying someone, closing a linked
-   ticket) is the caller's responsibility, not this skill's — `ralph-implement` is
+   ticket) is the caller's responsibility, not this skill's — `sdlc-ralph-implement` is
    pipeline-agnostic and never publishes or notifies anything on its own.
 5. Hand the branch to the user: tell them how to test it locally and give the commands to run
    once they're happy — `git add -A && git commit -m "feat(<area>): <summary> (#<N>)"`, then
    `git checkout main && git merge --no-ff feat/<N>-<slug>`. If they request changes instead, add
    them as new unchecked items to the plan, set `status: in_progress`, and re-run
-   `Skill(skill: "ralph-implement", args: <plan path>)` on the same branch.
+   `Skill(skill: "sdlc-ralph-implement", args: <plan path>)` on the same branch.
 
 ## Notes
 

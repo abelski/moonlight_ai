@@ -1,5 +1,5 @@
 ---
-name: update-readme
+name: sdlc-update-readme
 description: Update README.md after key decisions or architecture changes in this project.
 ---
 

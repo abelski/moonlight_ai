@@ -1,5 +1,5 @@
 ---
-name: do-in-my-chrome
+name: helper-do-in-my-chrome
 description: Drive the user's own Chrome browser, headed, attached to their real running tab so cookies/logins carry over — never a fresh or switched profile. Use for any one-off task that needs to read or act on a live webpage the user is (or should be) logged into — check a page, click through a flow, scrape something, verify a live state — when no more specific skill already covers that site. Not for a project's own automated browser-test suite — that stays headless and isolated. Works in any project, not tied to this one.
 ---
 

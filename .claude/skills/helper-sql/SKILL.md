@@ -1,5 +1,5 @@
 ---
-name: sql
+name: helper-sql
 description: Run SQL against this project's database. Pass a query as $ARGUMENTS or be prompted for one.
 ---
 

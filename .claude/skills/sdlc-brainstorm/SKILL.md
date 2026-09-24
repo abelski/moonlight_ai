@@ -1,13 +1,13 @@
 ---
-name: brainstorm
-description: First step of a feature — turn a raw idea into a confirmed idea file (plans/ideas/idea_<N>_<slug>.md) holding all business context. Finds precedents in past plans, grills the user via the grilling skill, writes the file, asks for confirmation, then hands off to feature-analyst. Use when the user brings a new feature idea, says "brainstorm", or wants to start a feature.
+name: sdlc-brainstorm
+description: First step of a feature — turn a raw idea into a confirmed idea file (plans/ideas/idea_<N>_<slug>.md) holding all business context. Finds precedents in past plans, grills the user via the productivity-grilling skill, writes the file, asks for confirmation, then hands off to sdlc-feature-analyst. Use when the user brings a new feature idea, says "brainstorm", or wants to start a feature.
 ---
 
 Turn the idea in `$ARGUMENTS` into an idea file the user confirms. No code, no plan, no branch —
-this step only captures **what and why**. The **how** is `feature-analyst`'s job.
+this step only captures **what and why**. The **how** is `sdlc-feature-analyst`'s job.
 
 Idea files are written on the main branch, uncommitted. The feature branch is created later, at
-implementation (`feature-analyst` Phase 3), so a dropped or parked idea never leaves a dead branch
+implementation (`sdlc-feature-analyst` Phase 3), so a dropped or parked idea never leaves a dead branch
 behind; the untracked file rides into the branch on `git checkout -b`.
 
 ## Step 1 — Assign the change number
@@ -27,7 +27,7 @@ user re-decide something a precedent settled.
 
 ## Step 3 — Grill
 
-`Skill(skill: "grilling", args: <the idea + precedents found>)`. Cover at least: the problem and
+`Skill(skill: "productivity-grilling", args: <the idea + precedents found>)`. Cover at least: the problem and
 who has it, desired outcome, scope and non-goals, which surfaces it touches, edge cases, and how
 we'll know it worked — plus any product dimensions this project's `CLAUDE.md` says every change
 must address (languages, mobile, pricing tiers, …). Facts from code/data are yours to look up, not
@@ -66,7 +66,7 @@ Every settled question from grilling: **Q** — answer (one line each).
 How we'll know it works (observable, not "users like it").
 
 ## Open questions
-Anything deliberately left for feature-analyst. Empty is fine.
+Anything deliberately left for sdlc-feature-analyst. Empty is fine.
 ```
 
 ## Step 5 — Confirm
@@ -75,4 +75,4 @@ Show the file in chat. `AskUserQuestion`: "Idea #<N> saved to `<path>`. Confirme
 "Confirm — build the plan", "Revise". On revise: take corrections, update, ask again.
 
 On confirm: set `status: confirmed`, then
-`Skill(skill: "feature-analyst", args: "plans/ideas/idea_<N>_<slug>.md")`.
+`Skill(skill: "sdlc-feature-analyst", args: "plans/ideas/idea_<N>_<slug>.md")`.

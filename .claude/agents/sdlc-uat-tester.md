@@ -1,5 +1,5 @@
 ---
-name: uat-tester
+name: sdlc-uat-tester
 description: Verifies a fix or feature by driving the running app as a customer/user would — black-box, with no access to the code, the plan, or the tests. Returns a per-criterion PASS/FAIL/INCONCLUSIVE verdict backed by transcripts/output, for a post-implementation verification loop. Never invoke it to review code or to decide whether an implementation is correct internally.
 tools: Bash, Write
 model: sonnet

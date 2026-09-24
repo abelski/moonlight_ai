@@ -1,6 +1,6 @@
 ---
-name: triage
-description: Fetch unresolved user-reported issues from this project's issue tracker, filter out spam/test noise by checking each against real data, and draft a bugfix plan per confirmed issue into plans/triage/active/ — using the same frontmatter/checklist shape ralph-implement already drives. Use when asked to triage a backlog of user-reported issues, process bug reports, or sync triage plan files with tracker state. Pairs with fix-issue-from-triage, which executes one drafted plan.
+name: sdlc-triage
+description: Fetch unresolved user-reported issues from this project's issue tracker, filter out spam/test noise by checking each against real data, and draft a bugfix plan per confirmed issue into plans/triage/active/ — using the same frontmatter/checklist shape sdlc-ralph-implement already drives. Use when asked to triage a backlog of user-reported issues, process bug reports, or sync triage plan files with tracker state. Pairs with sdlc-fix-issue-from-triage, which executes one drafted plan.
 ---
 
 Turn unresolved issues sitting in this project's tracker into verified, ready-to-implement bugfix
@@ -98,9 +98,9 @@ confirmed_effort: null
 ```
 
 `max_iterations` = `clamp((Fix plan items + Tests items) * 2, 8, 30)`. Always write `status: draft`
-here — `fix-issue-from-triage` flips it to `approved` once a human starts working the issue; this
+here — `sdlc-fix-issue-from-triage` flips it to `approved` once a human starts working the issue; this
 skill only ever produces drafts. A plan may also carry an optional `## UAT verification` section,
-same convention as `feature-analyst`, if the fix has user-observable behavior worth black-box
+same convention as `sdlc-feature-analyst`, if the fix has user-observable behavior worth black-box
 testing.
 
 After saving, print the list of created file paths.
@@ -118,8 +118,8 @@ After saving, print the list of created file paths.
 
 ## Notes
 
-- This is a bulk-intake sibling to `feature-analyst`, not a replacement for it — both produce the
-  same plan frontmatter/checklist shape, which is what lets `ralph-implement` drive either without
+- This is a bulk-intake sibling to `sdlc-feature-analyst`, not a replacement for it — both produce the
+  same plan frontmatter/checklist shape, which is what lets `sdlc-ralph-implement` drive either without
   caring which one wrote the file.
 - Never hardcode a tracker's schema, connection string, or API shape into this file — that's
   exactly the part every project supplies for itself in Step 1.

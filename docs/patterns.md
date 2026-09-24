@@ -5,7 +5,7 @@ generic skills, but are worth remembering before building something similar from
 
 ## Tiered plan-and-verify loop with idea briefs
 
-A heavier variant of this repo's own `feature-analyst`/`ralph-implement` pair: work is triaged
+A heavier variant of this repo's own `sdlc-feature-analyst`/`sdlc-ralph-implement` pair: work is triaged
 into three tiers by risk (skip planning entirely / lightweight plan / full idea-brief-then-plan),
 and every plan ends with a black-box verification round — a separate subagent that never saw the
 code, given only user-facing scenarios and acceptance criteria, talking to the built thing the way

@@ -1,14 +1,14 @@
 ---
-name: ralph-implement
-description: Execute a checklist plan file (feature or bugfix) to completion via a bounded, resumable, self-correcting loop — delegates each pass to a ralph-implementer subagent, flips checkboxes live, retries failed validation commands up to max_iterations (persisted in the plan's own frontmatter so retries survive a session restart), marks the plan blocked rather than falsely done if the budget runs out. Pipeline-agnostic — knows nothing about any caller-specific epilogue (publishing, notifying, moving files); callers own that.
+name: sdlc-ralph-implement
+description: Execute a checklist plan file (feature or bugfix) to completion via a bounded, resumable, self-correcting loop — delegates each pass to a sdlc-ralph-implementer subagent, flips checkboxes live, retries failed validation commands up to max_iterations (persisted in the plan's own frontmatter so retries survive a session restart), marks the plan blocked rather than falsely done if the budget runs out. Pipeline-agnostic — knows nothing about any caller-specific epilogue (publishing, notifying, moving files); callers own that.
 ---
 
 Execute a plan file's checklist(s) to completion. This skill is deliberately pipeline-agnostic —
-it works identically no matter which skill produced the plan (`feature-analyst` or anything else
+it works identically no matter which skill produced the plan (`sdlc-feature-analyst` or anything else
 that writes the same checklist shape), and it never publishes anything or notifies anyone itself.
 It reports `done` or `blocked` back to whoever invoked it; the caller decides what happens next.
 
-It can also be invoked standalone — `/ralph-implement <path-to-plan-file>` — to resume any
+It can also be invoked standalone — `/sdlc-ralph-implement <path-to-plan-file>` — to resume any
 `in_progress` or `blocked` plan from a cold session. All progress lives in the plan file itself,
 not in conversation memory, so a fresh invocation with zero prior context can pick up exactly
 where a previous one left off.
@@ -75,7 +75,7 @@ this already happened, don't re-ask).
 Only runs if the plan's `## Implementation` (feature) or `## Fix plan` (bugfix) section has any
 remaining `- [ ]` boxes.
 
-Spawn **one** `ralph-implementer` subagent (`Agent(subagent_type: "ralph-implementer", model:
+Spawn **one** `sdlc-ralph-implementer` subagent (`Agent(subagent_type: "sdlc-ralph-implementer", model:
 confirmed_model)`) covering the *entire* remaining section in a single pass — not one subagent
 per checklist item. Tell it: the plan file path, that this is an "implementation pass," and the
 `confirmed_effort` level. It writes through checkbox updates to the plan file directly as it
@@ -94,14 +94,14 @@ no need to wait for a new invocation.
 
 For each unchecked item under `## Validation` (feature) or `## Tests` (bugfix), in order:
 
-- **If it names a literal command**: spawn a `ralph-implementer` subagent for a "validation
+- **If it names a literal command**: spawn a `sdlc-ralph-implementer` subagent for a "validation
   retry" pass, telling it the plan file path, the exact command, and `confirmed_effort`.
   - It reports pass → the box is already checked (the subagent writes through) → continue to the
     next item.
   - It reports fail → before it retries again, **you** bump `iteration` in the plan frontmatter
     and persist it immediately (this write must land before the retry, so a crash mid-retry
     resumes with the correct count) → check `iteration >= max_iterations`:
-    - If not yet at the cap: spawn another `ralph-implementer` "validation retry" pass for the
+    - If not yet at the cap: spawn another `sdlc-ralph-implementer` "validation retry" pass for the
       *same* command (it already has the failure context from its own last attempt if this is
       the same subagent conversation; if this is a fresh subagent call, give it the previous
       failure output so it isn't starting blind). Repeat until pass or cap reached.
@@ -174,7 +174,7 @@ all. Reach for it only in two specific cases:
   own judgment says this plan is unlikely to finish in one turn.
 
 When used: invoke the `loop` skill with no interval (dynamic self-pacing). Each `ScheduleWakeup`
-call passes the *identical* `/ralph-implement <path>` prompt forward, sets `noop: false` with a
+call passes the *identical* `/sdlc-ralph-implement <path>` prompt forward, sets `noop: false` with a
 `reason` describing the concrete work just done (each firing here does real work, never idle
 polling), and picks `delaySeconds` near the 60-second floor rather than the 20-30 minute idle
 default. Call `stop: true` the instant Step 6 or Step 7 is reached.
@@ -184,12 +184,12 @@ default. Call `stop: true` the instant Step 6 or Step 7 is reached.
 - Never commit or push to git — this skill (and the subagents it spawns) never does, regardless
   of what a plan implies. Progress is tracked entirely via the plan file's own checkboxes and
   frontmatter, not git history.
-- `ralph-implementer` subagents never have `Agent` tool access — they cannot recursively spawn
+- `sdlc-ralph-implementer` subagents never have `Agent` tool access — they cannot recursively spawn
   further loops. All iteration/retry control lives here, in this orchestrator.
 - This skill has zero knowledge of caller-specific epilogues (publishing, notifications, moving
   files). If you find yourself about to do one of those, stop — that belongs in the calling
   skill, not here.
 - Consider adding a code-review gate between Step 4 and Step 5 — a read-only reviewer subagent
   over the diff before validation runs — once a project has enough history to justify the extra
-  round trip. See `.claude/agents/ralph-reviewer.md` in this bootstrap repo for a ready-made one;
+  round trip. See `.claude/agents/sdlc-ralph-reviewer.md` in this bootstrap repo for a ready-made one;
   it isn't wired into this skill by default to keep the loop's cost predictable for small changes.
