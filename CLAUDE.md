@@ -25,6 +25,13 @@ keep only what fits the project, drop the rest.
   progress if a session is interrupted or resumed.
 - Once a plan is fully done, move it to `plans/implemented/` (same filename) so active and
   finished plans don't mix.
+- Keep the *what/why* of a feature (problem, scope, decisions) in its own idea file
+  (`plans/ideas/`), separate from the plan's *how* — so reviewers and later sessions can check the
+  plan against it.
+- Have a fresh agent with none of the author's context review a plan before approval — give it
+  only file paths, never a summary of your reasoning.
+- Every change gets its own branch (`feat/<N>-<slug>`, `fix/<N>-<slug>`), created before the first
+  code edit. Idea and plan files may be written on main; they carry into the branch.
 - Ceremony should scale with the size and risk of the change, not apply uniformly. A one-file,
   no-contract-change fix doesn't need the same process as a schema migration.
 

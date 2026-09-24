@@ -8,7 +8,11 @@ generic enough to drop into a new project instead of rebuilding from scratch eac
 - **[CLAUDE.md](CLAUDE.md)** — a starter set of working practices (planning, testing, git/deploy
   safety, knowledge capture). Copy into a new project's `CLAUDE.md` and trim to what fits.
 - **`.claude/skills/`**
-  - `feature-analyst` — clarify → plan → approve → hand off to `ralph-implement`.
+  - `brainstorm` — first step of a feature: find precedents in past plans, grill the user, write
+    a confirmed `plans/ideas/idea_<N>_<slug>.md` holding the what/why, hand off to
+    `feature-analyst`.
+  - `feature-analyst` — idea file or raw request → plan → cold review by a fresh agent → approve →
+    branch `feat/<N>-<slug>` → hand off to `ralph-implement`. The user commits and merges.
   - `ralph-implement` — bounded, resumable, self-correcting loop that executes a checklist plan.
   - `sql` — ad-hoc query runner against a project's database.
   - `update-readme` — keep README.md in sync with real changes only.

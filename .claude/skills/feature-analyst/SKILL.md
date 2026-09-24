@@ -1,6 +1,6 @@
 ---
 name: feature-analyst
-description: Plan a feature or bugfix before implementing it — clarify requirements via AskUserQuestion dialogs, write a checklist plan to plans/, get user approval, then hand off implementation to the ralph-implement loop.
+description: Plan a feature or bugfix before implementing it — from a confirmed brainstorm idea file or a raw request (clarified via AskUserQuestion), write a checklist plan to plans/, have a cold agent review it, get user approval, then implement on its own branch via the ralph-implement loop.
 ---
 
 You are a feature analyst. Your job is to plan before writing any code. Follow these phases
@@ -8,7 +8,15 @@ strictly.
 
 ## Phase 1 — Clarify requirements
 
-Before planning, identify any ambiguities in the feature/bugfix request in `$ARGUMENTS`.
+If `$ARGUMENTS` is a confirmed idea file (`plans/ideas/idea_<N>_<slug>.md`, `status: confirmed`,
+written by the `brainstorm` skill), it holds the business context (problem, scope, decisions,
+precedents) — don't re-ask what it already settles. Reuse its `N` and `slug` for everything below
+(plan file `plans/plan_<N>_<slug>.md`), read its precedent plans and mirror their structure where
+they fit. Only technical ambiguities the idea and the code can't answer go to `AskUserQuestion`.
+An idea file that isn't `confirmed` → stop and run `Skill(skill: "brainstorm", args: <path>)`
+instead.
+
+Otherwise, identify any ambiguities in the feature/bugfix request in `$ARGUMENTS`.
 
 - If anything is unclear (scope, edge cases, affected files, data changes, UI behaviour, etc.),
   use the `AskUserQuestion` tool to ask clarifying questions. Group related questions into a
@@ -23,7 +31,8 @@ Wait for the user to answer before proceeding. Do not guess.
 Call the `EnterPlanMode` tool to enter planning mode, then explore the codebase thoroughly to
 understand the affected files, existing patterns, and dependencies.
 
-Create the plan file at `plans/plan_<feature-slug>.md` (create `plans/` and `plans/implemented/`
+Create the plan file at `plans/plan_<feature-slug>.md` — `plans/plan_<N>_<slug>.md` when
+working from an idea file (create `plans/` and `plans/implemented/`
 if they don't exist).
 
 The plan MUST start with YAML frontmatter:
@@ -52,7 +61,8 @@ confirmed_effort: null
 Then these sections, in order:
 
 ### Context
-Why this is being built, current behaviour, relevant existing files/patterns found during
+If working from an idea file, link it first (`Idea: plans/ideas/idea_<N>_<slug>.md`). Why this is
+being built, current behaviour, relevant existing files/patterns found during
 exploration. Include your one-line `suggested_model`/`suggested_effort` rationale here.
 
 ### Goals
@@ -126,8 +136,27 @@ drive the running app — a CLI invocation, a `curl` against a local endpoint, a
 - [ ] <criterion>
 ```
 
-After writing the file, show the user the full plan content in chat, then use the
-`AskUserQuestion` tool to ask:
+### Cold review
+
+After writing the file, spawn a **fresh** reviewer that sees none of your reasoning — only files:
+
+```
+Agent(subagent_type: "general-purpose", description: "Cold plan review", run_in_background: false,
+  prompt: "Review the plan plans/plan_<...>.md [against its idea file plans/ideas/idea_<N>_<slug>.md]
+  and the repo rules in CLAUDE.md. Read the code the plan touches. Report, ranked: (1) requirements
+  the plan misses or contradicts, (2) wrong file/function names or steps that won't work against
+  the real code, (3) missing tests or Definition-of-Done checks, (4) over-engineering — anything
+  simpler that does the job. Do not edit files. Be concrete: file, line, what to change.")
+```
+
+Do not pass it your conversation, summaries or reasoning — the point is a reader with no context,
+who catches what the author's own context hides. Fix what's valid in the plan; note what you
+rejected and why.
+
+### Approval
+
+Show the user the full plan content in chat plus the review findings (fixed / rejected), then use
+the `AskUserQuestion` tool to ask:
 
 - Question: "Plan saved to `plans/plan_<slug>.md`. Ready to proceed?"
 - Options: "Approve — start implementation", "Revise — I have corrections"
@@ -151,6 +180,16 @@ When the user approves the plan:
    - Options: "Yes — implement now", "No — let me reconsider"
 
 If the user selects "No", stop and use `AskUserQuestion` to ask what they want to change.
+
+On "Yes", create the change's own branch **before the first code edit** — never edit code on the
+main branch. Idea and plan files were written on main, uncommitted; they carry into the branch:
+
+```bash
+git checkout -b feat/<N>-<slug>   # feat/<slug> without an idea number; fix/... for kind: bugfix
+```
+
+If main has unrelated uncommitted changes, stop and ask the user — don't carry them along. Only the
+user commits, merges and pushes (this repo's hook blocks the agent from `git commit`/`git push`).
 
 ## Phase 4 — Implement via ralph-implement
 
@@ -193,7 +232,8 @@ mind that wrote the fix. This loop hands judgment to something that has never se
 
 Once `ralph-implement` reports the plan done:
 
-1. Move the file: `plans/plan_<slug>.md` → `plans/implemented/plan_<slug>.md`.
+1. Move the file: `plans/plan_<slug>.md` → `plans/implemented/plan_<slug>.md`. If there's an
+   idea file, move it too: `plans/ideas/idea_<N>_<slug>.md` → `plans/ideas/implemented/`.
 2. If this project keeps a changelog, append a row describing what changed.
 3. If this project maintains `specs/` (living current-behavior docs), spawn a `spec-writer`
    subagent (`Agent(subagent_type: "spec-writer")`) per touched component to update
@@ -202,6 +242,11 @@ Once `ralph-implement` reports the plan done:
 4. Any project-specific epilogue (announcing the change, notifying someone, closing a linked
    ticket) is the caller's responsibility, not this skill's — `ralph-implement` is
    pipeline-agnostic and never publishes or notifies anything on its own.
+5. Hand the branch to the user: tell them how to test it locally and give the commands to run
+   once they're happy — `git add -A && git commit -m "feat(<area>): <summary> (#<N>)"`, then
+   `git checkout main && git merge --no-ff feat/<N>-<slug>`. If they request changes instead, add
+   them as new unchecked items to the plan, set `status: in_progress`, and re-run
+   `Skill(skill: "ralph-implement", args: <plan path>)` on the same branch.
 
 ## Notes
 

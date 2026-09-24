@@ -21,6 +21,10 @@ the approval. If the located plan's `status` is still `draft`, flip it to `appro
 delegating in Step 2 (this is what lets `ralph-implement` proceed instead of bouncing it back as
 unapproved).
 
+Then create the fix's own branch before any code edit — never fix on the main branch:
+`git checkout -b fix/<N>-<slug>` (slug from the plan filename). If main has unrelated uncommitted
+changes, stop and ask the user first.
+
 ## Step 2 — Delegate the fix and tests
 
 ```
@@ -69,7 +73,9 @@ Only if the user selected **Yes**:
    invent a separate notification step here.
 2. Move the plan file: `plans/triage/active/issue-<N>-*.md` →
    `plans/triage/implemented/IMPLEMENTED-issue-<N>-*.md`.
-3. Report: "Issue #<N> marked resolved. Plan moved to `implemented/`."
+3. Report: "Issue #<N> marked resolved. Plan moved to `implemented/`." plus the commands for the
+   user to run — `git add -A && git commit -m "fix(<area>): <summary> (issue #<N>)"`, then
+   `git checkout main && git merge --no-ff fix/<N>-<slug>`. Only the user commits and merges.
 
 ## Notes
 
