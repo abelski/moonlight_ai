@@ -17,7 +17,7 @@ generic enough to drop into a new project instead of rebuilding from scratch eac
       approve → branch `feat/<N>-<slug>` → hand off to `sdlc-ralph-implement`. The user commits
       and merges.
     - `sdlc-ralph-implement` — bounded, resumable, self-correcting loop that executes a checklist
-      plan.
+      plan: implement → review ⇄ validate, repeated until a round is clean or the budget runs out.
     - `sdlc-triage` — bulk-intake sibling to `sdlc-feature-analyst`: fetch unresolved issues from
       this project's own tracker (source left for the project to plug in), filter spam/test
       noise, draft a bugfix plan per confirmed issue into `plans/triage/active/`.
@@ -40,8 +40,8 @@ generic enough to drop into a new project instead of rebuilding from scratch eac
   - `sdlc-ralph-implementer` — the mechanical worker `sdlc-ralph-implement` spawns per pass.
   - `sdlc-ralph-reviewer` — read-only code-review gate (security, dead code, over-engineering,
     config-vs-hardcoded, architecture fit), reporting on the same Standards/Spec axes as
-    `sdlc-standards-spec-review` and reusing its smell baseline — optional add-on, not wired
-    into `sdlc-ralph-implement` by default; see the note at the bottom of that skill.
+    `sdlc-standards-spec-review` and reusing its smell baseline. Runs as `sdlc-ralph-implement`'s
+    Step 4.5 gate after implementation, before validation; blockers go back to the implementer.
   - `sdlc-spec-writer` — maintains `specs/<component>.md`, a living current-behavior doc (Gherkin
     scenarios) written after a plan's Definition-of-Done gate passes — optional add-on, invoked
     from `sdlc-feature-analyst`'s wrap-up only if a project uses this convention.

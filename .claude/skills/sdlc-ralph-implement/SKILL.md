@@ -87,8 +87,40 @@ a genuine blocker (not just "ran out of budget"), treat this the same as a valid
 would be treated in Step 5: surface it to the user directly rather than silently retrying
 indefinitely.
 
-Once every Implementation/Fix-plan box is checked, fall straight into Step 5 in the same turn —
+Once every Implementation/Fix-plan box is checked, fall straight into Step 4.5 in the same turn —
 no need to wait for a new invocation.
+
+## Step 4.5 — Code review gate
+
+Skip if the plan already has a `## Review` section containing `- [x] Code review passed` (a
+resume after the gate already passed).
+
+Loop, starting at round 1:
+
+1. Spawn `sdlc-ralph-reviewer` (`Agent(subagent_type: "sdlc-ralph-reviewer")`). Tell it: the plan
+   file path, `confirmed_effort`, and whether this is the first round or a re-review — on a
+   re-review, also the previous round's findings verbatim plus, for each one the implementer
+   disputed, its stated reason. Relay **nothing else** from the implementer — not its report, its
+   reasoning, or any claim that the work is done; the reviewer's independence is the point.
+2. **No `blocker` and no `should-fix`** → write/replace the plan's `## Review` section with
+   `- [x] Code review passed (round <N>)` followed by any `note` findings as plain bullets
+   (recorded, not acted on). Go to Step 5.
+3. Otherwise bump `iteration` and persist it (same budget as Step 5, same write-before-retry
+   rule). At `iteration >= max_iterations` → Step 7, with the open findings as the blocking item.
+   Else spawn `sdlc-ralph-implementer` for a **"review-fix pass"**, giving it the plan path,
+   `confirmed_effort`, and the `blocker`/`should-fix` findings verbatim. Then loop to the next
+   round as a re-review.
+
+A `should-fix` the implementer disputes and the reviewer then drops no longer counts; one the
+reviewer upholds keeps the loop going. There is no "good enough" exit short of the budget.
+
+**Review ⇄ validation cycle.** Steps 4.5, 5 and 6 form one loop that ends only when a single round
+has a clean review *and* every validation/DoD command passes with no code changed in that round —
+or when `max_iterations` runs out (Step 7). If any Step 5/6 retry changed code, the reviewed diff
+is stale: replace `- [x] Code review passed` with `- [ ] Code review (re-review after validation
+fixes)`, return here for a re-review (tell the reviewer which findings/fixes came from
+validation), and after it passes re-run **every** `## Validation`/`## Tests` command and the
+`## Definition of Done` commands, not just the unchecked ones.
 
 ## Step 5 — Validation / Tests pass with bounded self-correction
 
@@ -120,6 +152,8 @@ Once every mechanical box across both sections is checked (manual items aside):
   anything that regressed between when an individual box was checked and now.
 - All must exit 0 / pass. If one fails here, treat it exactly like a Step 5 validation failure:
   diagnose, fix, retry, bounded by the same `max_iterations`, escalate to Step 7 if exhausted.
+- If any retry in Step 5 or here changed code, do **not** complete: go back to Step 4.5 (see
+  "Review ⇄ validation cycle"). Complete only from a round where nothing needed fixing.
 - If the plan has no `## Definition of Done` section at all (legacy plan): skip this extra gate,
   note in your report that it was missing, and treat "all mechanical boxes checked" as sufficient
   for completion.
@@ -131,7 +165,8 @@ Once every mechanical box across both sections is checked (manual items aside):
 
 ## Step 7 — Blocked
 
-`iteration >= max_iterations` reached with mechanical items still unchecked:
+`iteration >= max_iterations` reached with mechanical items still unchecked, open review
+findings, or a review ⇄ validation round that still changed code:
 
 - Set `status: blocked`, persist.
 - Replace any existing `## Blocked` section (don't let it grow across repeated block/resume
@@ -146,7 +181,7 @@ Once every mechanical box across both sections is checked (manual items aside):
   **Remaining:**
   - [ ] <currently-unchecked items, copied>
 
-  **Blocking command:** `<exact failing command>`
+  **Blocking command:** `<exact failing command>` (or, from Step 4.5, the open review blockers)
 
   Last failure output:
   ```
@@ -189,7 +224,7 @@ default. Call `stop: true` the instant Step 6 or Step 7 is reached.
 - This skill has zero knowledge of caller-specific epilogues (publishing, notifications, moving
   files). If you find yourself about to do one of those, stop — that belongs in the calling
   skill, not here.
-- Consider adding a code-review gate between Step 4 and Step 5 — a read-only reviewer subagent
-  over the diff before validation runs — once a project has enough history to justify the extra
-  round trip. See `.claude/agents/sdlc-ralph-reviewer.md` in this bootstrap repo for a ready-made one;
-  it isn't wired into this skill by default to keep the loop's cost predictable for small changes.
+- The Step 4.5 reviewer (`sdlc-ralph-reviewer`) applies the Standards/Spec axes of the
+  `sdlc-standards-spec-review` skill inline — it can't run that skill itself, since subagents have
+  no `Agent` tool. For a two-sub-agent review from a fresh session, run
+  `/sdlc-standards-spec-review` by hand.
