@@ -25,6 +25,11 @@ keep only what fits the project, drop the rest.
   progress if a session is interrupted or resumed.
 - Once a plan is fully done, move it to `plans/implemented/` (same filename) so active and
   finished plans don't mix.
+- Finding a new issue or improvement mid-work is not a reason to fold it in silently or go quiet:
+  stop and ask whether it becomes a new plan or extends the current one.
+- Dated follow-ups ("check back in 2 weeks", manual rollout step) go in `plans/reminders.md` as
+  `- YYYY-MM-DD — what to do`. The SessionStart hook `.claude/hooks/reminders.py` surfaces lines
+  due within 3 days — mention them to the user, delete a line when done.
 - Keep the *what/why* of a feature (problem, scope, decisions) in its own idea file
   (`plans/ideas/`), separate from the plan's *how* — so reviewers and later sessions can check the
   plan against it.
@@ -53,6 +58,13 @@ keep only what fits the project, drop the rest.
 
 - Write unit tests for new or modified logic.
 - Add test coverage for every new feature and run the relevant suite(s) before calling it done.
+- A "must always / must never X" requirement for an AI agent is a code gate (callback, validator),
+  not a sentence in the prompt. Prose owns wording and tone; code owns invariants. Try prose at
+  most once — if a check still fails, convert it to a guard.
+- Any change a user sees ships with evidence screenshots (every state: empty, populated, error;
+  desktop and 375px; every language) — drive them with Playwright against a local server with the
+  API mocked, look at them yourself, and save under `temp_files/screenshots/<plan-name>/`. Mock any
+  endpoint whose value differs locally from production.
 - Never assert tests on exact LLM/AI-generated output text — assert on structured effects (tool
   calls, arguments, return shapes) instead; exact-text assertions break on harmless rewording.
 - Post-implementation, verify end-to-end: run the tests, check logs, actually exercise the
@@ -88,6 +100,13 @@ keep only what fits the project, drop the rest.
 - If a bug takes real time to diagnose, or something about the environment/API/server behaves
   non-obviously, write it down immediately in a durable knowledge file (`knowledge/`,
   `documentation/`, or similar) — don't let it get re-learned by the next session.
+- Document architecture decisions too, not just gotchas: when you pick one approach over a
+  plausible alternative for a non-obvious reason (tradeoff, hosting/DB/auth constraint, rejected
+  simpler option), write the decision and its "why" next to the related feature.
+- Specs stay current: a change in behavior updates the matching `specs/<component>.md` in the same
+  change. A spec that lags the code is a bug.
+- When a change costs money (paid API, bigger instance, new managed service), say so before making
+  it — with an estimate and the cheaper alternative. Never let a service bill while idle.
 - Keep `README.md` current as part of "done," not a follow-up task — update it for new/removed
   setup steps, changed commands, or architecture changes; skip it for internal refactors with no
   user-facing effect.

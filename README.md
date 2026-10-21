@@ -1,4 +1,4 @@
-# claude_bootstrap
+# moonlight_ai (formerly claude_bootstrap)
 
 Reusable Claude Code setup pulled out of this machine's working repos — the parts that are
 generic enough to drop into a new project instead of rebuilding from scratch each time.
@@ -27,15 +27,26 @@ generic enough to drop into a new project instead of rebuilding from scratch eac
     - `sdlc-standards-spec-review` — two-axis diff review (Standards: repo conventions + Fowler
       smell baseline; Spec: does it match the plan) in parallel sub-agents. Fork of Matt Pocock's
       `code-review` (MIT), renamed to not shadow the built-in `/code-review` bug hunter.
+    - `sdlc-diagnosing-bugs` — diagnosis loop for hard bugs and perf regressions: find the cause
+      before fixing.
+    - `sdlc-tdd` — test-first red-green-refactor.
+    - `sdlc-pr` — how to write a PR body.
     - `sdlc-update-readme` — keep README.md in sync with real changes only.
   - **Productivity (`productivity-*`)** — conversation tools.
     - `productivity-grilling` — relentless interview to stress-test a plan, decision, or idea;
       `productivity-grill-me` is a user-typed alias for it.
     - `productivity-handoff` — compact the conversation into a handoff doc for another agent.
+    - `productivity-retro` — retrospective on a coding session; feeds `knowledge/` and CLAUDE.md.
+    - `productivity-research` — investigate from primary sources, save findings as Markdown in the repo.
+    - `productivity-writing-for-agents` — how to write skills, CLAUDE.md, AGENTS.md.
+    - `productivity-show-me` — explain the current topic visually: pseudocode, call/component/file
+      trees, Mermaid, diffs, or a one-off HTML page.
     - `productivity-wait-what` — the last reply didn't land: re-pitch it.
   - **Helpers (`helper-*`)** — one-off utilities.
     - `helper-do-in-my-chrome` — drive the user's own logged-in Chrome tab.
     - `helper-sql` — ad-hoc query runner against a project's database.
+    - `helper-bootstrap-sync` — pull selected skills/agents/hooks from this repo on GitHub into
+      another project's `.claude/`.
 - **`.claude/agents/`** — all SDLC, same `sdlc-` prefix as the skills.
   - `sdlc-ralph-implementer` — the mechanical worker `sdlc-ralph-implement` spawns per pass.
   - `sdlc-ralph-reviewer` — read-only code-review gate (security, dead code, over-engineering,
@@ -49,7 +60,12 @@ generic enough to drop into a new project instead of rebuilding from scratch eac
     the running app via a project-supplied instrument (CLI, HTTP call, probe script) — optional
     add-on, invoked from `sdlc-feature-analyst`'s Phase 4.5 only when a plan has a `## UAT
     verification` section.
+- **`.claude/hooks/`** — `block-git-commit-push.sh` (only the user commits/pushes; also blocks `reset --hard`, `clean -f`,
+  `branch -D`, `checkout .`, `restore .`) and
+  `reminders.py` (SessionStart: shows `plans/reminders.md` lines due within 3 days). Both wired in
+  `.claude/settings.json`.
 - **`.claude/output-styles/talk-to-me.md`** — short, blunt, plain-language replies.
+- **`docs/third-party.md`** — attribution for material adapted from Matt Pocock's skills (MIT).
 - **`docs/skill-authoring.md`** — the Agent Skills spec convention used across these repos.
 - **`docs/patterns.md`** — heavier patterns seen elsewhere (a tiered plan-and-verify loop with
   black-box verification, a deploy-safety protocol, agent-loop design notes) that are pointers to
