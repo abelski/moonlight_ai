@@ -1,0 +1,13 @@
+{
+  "name": "moonlight",
+  "owner": {
+    "name": "Artur Belski"
+  },
+  "plugins": [
+    {
+      "name": "moonlight",
+      "source": "./",
+      "description": "SDLC pipeline for Claude Code: brainstorm, feature plan with a cold review, checklist implementation with a review gate, TDD, triage, specs and PR bodies."
+    }
+  ]
+}
