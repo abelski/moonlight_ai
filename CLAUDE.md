@@ -18,18 +18,18 @@ keep only what fits the project, drop the rest.
 - Plan before touching code, except for changes small enough that a plan would cost more than
   the change itself (a typo, a one-line fix with an obvious cause, a docstring tweak).
 - If the harness has an `EnterPlanMode`/plan-mode tool, use it, then persist the approved plan to
-  a repo-tracked `plans/NNNN-short-title.md` (zero-padded, incrementing) — plan-mode output alone
-  often lives outside the repo and won't survive a session boundary.
+  a repo-tracked `plans/improvements/active/plan_<N>_<slug>.md` (bugfixes: `plans/triage/active/`) —
+  plan-mode output alone often lives outside the repo and won't survive a session boundary.
 - Every plan is a checklist (`- [ ] item`), not prose. Check items off (`- [x]`) live, during
   implementation — never in one batch at the end. A plan file is the source of truth for
   progress if a session is interrupted or resumed.
-- Once a plan is fully done, move it to `plans/implemented/` (same filename) so active and
-  finished plans don't mix.
+- Once a plan is fully done, move it to `plans/improvements/implemented/` (same filename; bugfixes go
+  to `plans/triage/implemented/`) so active and finished plans don't mix.
 - Finding a new issue or improvement mid-work is not a reason to fold it in silently or go quiet:
   stop and ask whether it becomes a new plan or extends the current one.
 - Dated follow-ups ("check back in 2 weeks", manual rollout step) go in `plans/reminders.md` as
-  `- YYYY-MM-DD — what to do`. The SessionStart hook `.claude/hooks/reminders.py` surfaces lines
-  due within 3 days — mention them to the user, delete a line when done.
+  `- YYYY-MM-DD — what to do`. The moonlight SessionStart hook surfaces lines due within 3 days —
+  mention them to the user, delete a line when done.
 - Keep the *what/why* of a feature (problem, scope, decisions) in its own idea file
   (`plans/ideas/`), separate from the plan's *how* — so reviewers and later sessions can check the
   plan against it.
@@ -58,6 +58,9 @@ keep only what fits the project, drop the rest.
 
 - Write unit tests for new or modified logic.
 - Add test coverage for every new feature and run the relevant suite(s) before calling it done.
+- Say where tests differ from production (database engine, data, config). When a change touches
+  constraints, foreign keys or queries, test on the production engine, or state the gap in the plan.
+- Judge data-heavy work (queries, imports) by database round trips, not by local wall time.
 - A "must always / must never X" requirement for an AI agent is a code gate (callback, validator),
   not a sentence in the prompt. Prose owns wording and tone; code owns invariants. Try prose at
   most once — if a check still fails, convert it to a guard.
@@ -94,6 +97,12 @@ keep only what fits the project, drop the rest.
   will be affected and waits for explicit confirmation before acting.
 - Output files get identifying names (date, subject, run id) — never generic names that silently
   overwrite the last run's output.
+- A production write that needs credentials is the user's step: hand over an import file or script,
+  and do not run it yourself.
+- Anything a person must judge by their senses (audio, how a screen feels) goes to the user: play or
+  show the candidates and ask. Never claim that something sounds or looks right.
+- An operation that runs longer than about a minute reports progress as it goes (counts), not one line
+  when it ends.
 
 ## Documentation & knowledge capture
 
@@ -110,6 +119,9 @@ keep only what fits the project, drop the rest.
 - Keep `README.md` current as part of "done," not a follow-up task — update it for new/removed
   setup steps, changed commands, or architecture changes; skip it for internal refactors with no
   user-facing effect.
+- Write repo files in English — plans, ideas, specs, docs, changelog, reminders — even when the
+  conversation is in another language. Use another language only for project content that needs it:
+  UI copy, data files, translated articles.
 - Research, findings, and architecture-decision records belong in a tracked folder (`documents/`,
   `documentation/`), not only in chat — future sessions can't read the conversation.
 - Give features/changes a sequential number for traceability across plans, commits, and a
@@ -117,9 +129,13 @@ keep only what fits the project, drop the rest.
 
 ## Skill / command / agent authoring
 
-- Any command, skill, or agent created for this project lives in this project's own `.claude/`
-  directory (`.claude/commands/`, `.claude/skills/`, `.claude/agents/`) — project scope, not the
-  user's global `~/.claude/`. It ships with the repo and works for anyone who clones it.
+- Skills, agents and hooks shipped by this repo live in the moonlight plugin folders at the root:
+  `skills/<name>/SKILL.md`, `agents/<name>.md`, `hooks/hooks.json`. They ship with the plugin and are
+  namespaced `moonlight:<name>`, so reference them that way: `Skill(skill: "moonlight:<name>")` and
+  `subagent_type: "moonlight:<name>"`. Bare names do not resolve.
+- Personal conversation tools that are not in the plugin yet stay in `.claude/skills/` (repo-local).
+- Plugin manifests live in `.claude-plugin/`. Check a change with `claude plugin validate .` and
+  `claude --plugin-dir .`.
 - See [docs/skill-authoring.md](docs/skill-authoring.md) for the convention this machine's repos
   converged on (Agent Skills spec: frontmatter shape, directory layout, size limits).
 

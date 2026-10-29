@@ -1,6 +1,6 @@
 ---
 name: sdlc-ralph-implement
-description: Execute a checklist plan file (feature or bugfix) to completion via a bounded, resumable, self-correcting loop — delegates each pass to a sdlc-ralph-implementer subagent, flips checkboxes live, retries failed validation commands up to max_iterations (persisted in the plan's own frontmatter so retries survive a session restart), marks the plan blocked rather than falsely done if the budget runs out. Pipeline-agnostic — knows nothing about any caller-specific epilogue (publishing, notifying, moving files); callers own that.
+description: Execute a checklist plan file (feature or bugfix) to completion via a bounded, resumable, self-correcting loop — delegates each pass to a moonlight:sdlc-ralph-implementer subagent, flips checkboxes live, retries failed validation commands up to max_iterations (persisted in the plan's own frontmatter so retries survive a session restart), marks the plan blocked rather than falsely done if the budget runs out. Pipeline-agnostic — knows nothing about any caller-specific epilogue (publishing, notifying, moving files); callers own that.
 ---
 
 Execute a plan file's checklist(s) to completion. This skill is deliberately pipeline-agnostic —
@@ -75,7 +75,7 @@ this already happened, don't re-ask).
 Only runs if the plan's `## Implementation` (feature) or `## Fix plan` (bugfix) section has any
 remaining `- [ ]` boxes.
 
-Spawn **one** `sdlc-ralph-implementer` subagent (`Agent(subagent_type: "sdlc-ralph-implementer", model:
+Spawn **one** `moonlight:sdlc-ralph-implementer` subagent (`Agent(subagent_type: "moonlight:sdlc-ralph-implementer", model:
 confirmed_model)`) covering the *entire* remaining section in a single pass — not one subagent
 per checklist item. Tell it: the plan file path, that this is an "implementation pass," and the
 `confirmed_effort` level. It writes through checkbox updates to the plan file directly as it
@@ -97,7 +97,7 @@ resume after the gate already passed).
 
 Loop, starting at round 1:
 
-1. Spawn `sdlc-ralph-reviewer` (`Agent(subagent_type: "sdlc-ralph-reviewer")`). Tell it: the plan
+1. Spawn `moonlight:sdlc-ralph-reviewer` (`Agent(subagent_type: "moonlight:sdlc-ralph-reviewer")`). Tell it: the plan
    file path, `confirmed_effort`, and whether this is the first round or a re-review — on a
    re-review, also the previous round's findings verbatim plus, for each one the implementer
    disputed, its stated reason. Relay **nothing else** from the implementer — not its report, its
@@ -107,7 +107,7 @@ Loop, starting at round 1:
    (recorded, not acted on). Go to Step 5.
 3. Otherwise bump `iteration` and persist it (same budget as Step 5, same write-before-retry
    rule). At `iteration >= max_iterations` → Step 7, with the open findings as the blocking item.
-   Else spawn `sdlc-ralph-implementer` for a **"review-fix pass"**, giving it the plan path,
+   Else spawn `moonlight:sdlc-ralph-implementer` for a **"review-fix pass"**, giving it the plan path,
    `confirmed_effort`, and the `blocker`/`should-fix` findings verbatim. Then loop to the next
    round as a re-review.
 
@@ -126,14 +126,14 @@ validation), and after it passes re-run **every** `## Validation`/`## Tests` com
 
 For each unchecked item under `## Validation` (feature) or `## Tests` (bugfix), in order:
 
-- **If it names a literal command**: spawn a `sdlc-ralph-implementer` subagent for a "validation
+- **If it names a literal command**: spawn a `moonlight:sdlc-ralph-implementer` subagent for a "validation
   retry" pass, telling it the plan file path, the exact command, and `confirmed_effort`.
   - It reports pass → the box is already checked (the subagent writes through) → continue to the
     next item.
   - It reports fail → before it retries again, **you** bump `iteration` in the plan frontmatter
     and persist it immediately (this write must land before the retry, so a crash mid-retry
     resumes with the correct count) → check `iteration >= max_iterations`:
-    - If not yet at the cap: spawn another `sdlc-ralph-implementer` "validation retry" pass for the
+    - If not yet at the cap: spawn another `moonlight:sdlc-ralph-implementer` "validation retry" pass for the
       *same* command (it already has the failure context from its own last attempt if this is
       the same subagent conversation; if this is a fresh subagent call, give it the previous
       failure output so it isn't starting blind). Repeat until pass or cap reached.
@@ -219,12 +219,12 @@ default. Call `stop: true` the instant Step 6 or Step 7 is reached.
 - Never commit or push to git — this skill (and the subagents it spawns) never does, regardless
   of what a plan implies. Progress is tracked entirely via the plan file's own checkboxes and
   frontmatter, not git history.
-- `sdlc-ralph-implementer` subagents never have `Agent` tool access — they cannot recursively spawn
+- `moonlight:sdlc-ralph-implementer` subagents never have `Agent` tool access — they cannot recursively spawn
   further loops. All iteration/retry control lives here, in this orchestrator.
 - This skill has zero knowledge of caller-specific epilogues (publishing, notifications, moving
   files). If you find yourself about to do one of those, stop — that belongs in the calling
   skill, not here.
-- The Step 4.5 reviewer (`sdlc-ralph-reviewer`) applies the Standards/Spec axes of the
+- The Step 4.5 reviewer (`moonlight:sdlc-ralph-reviewer`) applies the Standards/Spec axes of the
   `sdlc-standards-spec-review` skill inline — it can't run that skill itself, since subagents have
   no `Agent` tool. For a two-sub-agent review from a fresh session, run
   `/sdlc-standards-spec-review` by hand.

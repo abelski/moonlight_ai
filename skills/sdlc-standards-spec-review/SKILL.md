@@ -104,5 +104,5 @@ Reporting them separately stops one axis from masking the other.
   additional agents" line in both briefs is the fix — keep it.
 - **Run it from a fresh session**, not the one that wrote the code: same context reviewing itself
   is confirmation bias.
-- **`sdlc-ralph-reviewer` can't run this skill** (subagents have no `Agent` tool). It applies the same
+- **`moonlight:sdlc-ralph-reviewer` can't run this skill** (subagents have no `Agent` tool). It applies the same
   two axes inline and reads `references/smells.md` directly — edit the baseline there, once.

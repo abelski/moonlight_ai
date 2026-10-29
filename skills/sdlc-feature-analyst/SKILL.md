@@ -13,7 +13,7 @@ written by the `sdlc-brainstorm` skill), it holds the business context (problem,
 precedents) — don't re-ask what it already settles. Reuse its `N` and `slug` for everything below
 (plan file `plans/plan_<N>_<slug>.md`), read its precedent plans and mirror their structure where
 they fit. Only technical ambiguities the idea and the code can't answer go to `AskUserQuestion`.
-An idea file that isn't `confirmed` → stop and run `Skill(skill: "sdlc-brainstorm", args: <path>)`
+An idea file that isn't `confirmed` → stop and run `Skill(skill: "moonlight:sdlc-brainstorm", args: <path>)`
 instead.
 
 Otherwise, identify any ambiguities in the feature/bugfix request in `$ARGUMENTS`.
@@ -29,9 +29,11 @@ Wait for the user to answer before proceeding. Do not guess.
 ## Phase 2 — Write the plan (in planning mode)
 
 Call the `EnterPlanMode` tool to enter planning mode, then explore the codebase thoroughly to
-understand the affected files, existing patterns, and dependencies.
+understand the affected files, existing patterns, and dependencies. If the project has a codebase
+research file (`documentation/codebase-research.md` or `docs/codebase-research.md`, written by
+`moonlight:moonlight-init`), read it first, then verify the parts the plan depends on.
 
-Create the plan file at `plans/plan_<feature-slug>.md` — `plans/plan_<N>_<slug>.md` when
+Write the plan in English, whatever language the conversation uses. Create the plan file at `plans/plan_<feature-slug>.md` — `plans/plan_<N>_<slug>.md` when
 working from an idea file (create `plans/` and `plans/implemented/`
 if they don't exist).
 
@@ -70,6 +72,13 @@ Bulleted list of the explicit, user-facing outcomes this plan delivers.
 
 ### Non-Goals
 Bulleted list of what's explicitly out of scope — bounds the implementer, prevents scope creep.
+
+### Prototype (optional)
+Only for plans that change what a user sees. Step 0 of Implementation is a static mock of the changed
+screen(s), saved as an HTML file in the project's scratch folder (`/tmp`, per CLAUDE.md). Copy the
+surrounding UI from the real components rather than sketching it. Take screenshots at each width and
+language that the Definition of Done names. Stop there for the user's approval: no product code before
+it. Approved changes go back into Requirements. Skip the section for backend-only or data-only plans.
 
 ### Requirements
 Functional requirements, plus a `### Standing constraints` subsection restating this project's
@@ -196,7 +205,7 @@ user commits, merges and pushes (this repo's hook blocks the agent from `git com
 Delegate implementation entirely to the shared implementer loop:
 
 ```
-Skill(skill: "sdlc-ralph-implement", args: "plans/plan_<slug>.md")
+Skill(skill: "moonlight:sdlc-ralph-implement", args: "plans/plan_<slug>.md")
 ```
 
 `sdlc-ralph-implement` owns all further checkbox flipping, validation retries, iteration/blocked-state
@@ -212,7 +221,7 @@ bookkeeping, and the final Definition-of-Done gate. Do not duplicate any of that
 Reproduction/unit tests passing is not proof the behavior is right — they were written by the same
 mind that wrote the fix. This loop hands judgment to something that has never seen the code.
 
-1. Spawn a `sdlc-uat-tester` subagent (`Agent(subagent_type: "sdlc-uat-tester")`) with **exactly three
+1. Spawn a `moonlight:sdlc-uat-tester` subagent (`Agent(subagent_type: "moonlight:sdlc-uat-tester")`) with **exactly three
    things**: the plan's `Instrument`, `Scenarios`, and `Acceptance criteria` — verbatim — plus a
    verdict path (e.g. `plans/plan_<slug>-uat-round-<n>.md`). Never send it the plan file itself,
    the diff, the tests, or your theory of the fix; its independence is the value.
@@ -221,7 +230,7 @@ mind that wrote the fix. This loop hands judgment to something that has never se
    - **FAIL** — bump `uat_rounds` in the plan frontmatter, persist. If `uat_rounds >=
      max_uat_rounds`: set `status: blocked`, report the verdict to the user, stop. Otherwise: hand
      the tester's transcript and criteria **verbatim** (no added diagnosis of your own — you're the
-     mind that got it wrong the first time) to a `sdlc-ralph-implementer` fix pass targeting this plan
+     mind that got it wrong the first time) to a `moonlight:sdlc-ralph-implementer` fix pass targeting this plan
      file, then repeat step 1.
    - **INCONCLUSIVE** (the instrument itself never produced a real answer — env/quota/network) —
      doesn't consume a round; fix the environment and retry step 1.
@@ -232,21 +241,25 @@ mind that wrote the fix. This loop hands judgment to something that has never se
 
 Once `sdlc-ralph-implement` reports the plan done:
 
-1. Move the file: `plans/plan_<slug>.md` → `plans/implemented/plan_<slug>.md`. If there's an
-   idea file, move it too: `plans/ideas/idea_<N>_<slug>.md` → `plans/ideas/implemented/`.
-2. If this project keeps a changelog, append a row describing what changed.
-3. If this project maintains `specs/` (living current-behavior docs), spawn a `sdlc-spec-writer`
-   subagent (`Agent(subagent_type: "sdlc-spec-writer")`) per touched component to update
-   `specs/<component>.md` — see `.claude/agents/sdlc-spec-writer.md`. Optional; skip if the project
+1. If this project maintains `specs/` (living current-behavior docs), spawn a `moonlight:sdlc-spec-writer`
+   subagent (`Agent(subagent_type: "moonlight:sdlc-spec-writer")`) per touched component to update
+   `specs/<component>.md` — see the `moonlight:sdlc-spec-writer` agent. Optional; skip if the project
    doesn't use this convention.
-4. Any project-specific epilogue (announcing the change, notifying someone, closing a linked
+2. **Spec gate** (only if the idea file has a `## Proposed spec`). Check each proposed scenario against
+   the shipped behavior as the updated spec describes it. A promised scenario that did not ship: correct
+   the idea file to match what shipped, and tell the user. Something that shipped but the proposal did
+   not name: add it to the idea file, tagged `New`. Do not move any file until this gate passes.
+3. Move the file: `plans/plan_<slug>.md` → `plans/implemented/plan_<slug>.md`. If there's an
+   idea file, move it too: `plans/ideas/idea_<N>_<slug>.md` → `plans/ideas/implemented/`.
+4. If this project keeps a changelog, append a row describing what changed.
+5. Any project-specific epilogue (announcing the change, notifying someone, closing a linked
    ticket) is the caller's responsibility, not this skill's — `sdlc-ralph-implement` is
    pipeline-agnostic and never publishes or notifies anything on its own.
-5. Hand the branch to the user: tell them how to test it locally and give the commands to run
+6. Hand the branch to the user: tell them how to test it locally and give the commands to run
    once they're happy — `git add -A && git commit -m "feat(<area>): <summary> (#<N>)"`, then
    `git checkout main && git merge --no-ff feat/<N>-<slug>`. If they request changes instead, add
    them as new unchecked items to the plan, set `status: in_progress`, and re-run
-   `Skill(skill: "sdlc-ralph-implement", args: <plan path>)` on the same branch.
+   `Skill(skill: "moonlight:sdlc-ralph-implement", args: <plan path>)` on the same branch.
 
 ## Notes
 

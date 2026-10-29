@@ -15,7 +15,8 @@ state — not a draft.
 - Which spec to write or update: a target path, `specs/<component>.md`, and which directory/module
   that component lives in.
 - The plan file path that just completed (context on what changed — not something to quote or
-  trust blindly).
+  trust blindly). It is `none` for a baseline run from `moonlight-init`, where there is no plan: then
+  derive every scenario from the code.
 
 ## What a spec is, and is not
 
@@ -34,7 +35,7 @@ to read it and know what the component does today without reading its source or 
 
 ## Process
 
-1. Read the plan file's `## Requirements` (and `## Goals`/`## Non-Goals` if present) — these were
+1. If a plan file was given (not `none`), read its `## Requirements` (and `## Goals`/`## Non-Goals` if present) — these were
    written *before* this code landed, from what the user described wanting. Treat them as a
    starting point to reconcile, never as ground truth. Read the component's code in full: every
    file the plan's `## Implementation` touched, plus enough of the surrounding module to describe

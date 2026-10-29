@@ -4,7 +4,7 @@ description: Fix a triaged issue from plans/triage/active/ — delegate the fix 
 ---
 
 Fix a triaged issue by following its pre-written plan from `plans/triage/active/`. This skill
-knows nothing about any *specific* tracker — Step 5 is where the project's actual
+knows nothing about any *specific* tracker — Step 6 is where the project's actual
 resolve-in-tracker mechanism gets plugged in.
 
 ## Step 1 — Locate the plan file
@@ -18,17 +18,25 @@ If `$ARGUMENTS` is provided, treat it as an issue number (e.g. `35`) or partial 
 `sdlc-triage` always writes plan files with `status: draft` — there's no separate approval UI for this
 pipeline the way `sdlc-feature-analyst` has one; the user invoking this skill on a specific issue *is*
 the approval. If the located plan's `status` is still `draft`, flip it to `approved` now, before
-delegating in Step 2 (this is what lets `sdlc-ralph-implement` proceed instead of bouncing it back as
+delegating in Step 3 (this is what lets `sdlc-ralph-implement` proceed instead of bouncing it back as
 unapproved).
 
 Then create the fix's own branch before any code edit — never fix on the main branch:
 `git checkout -b fix/<N>-<slug>` (slug from the plan filename). If main has unrelated uncommitted
 changes, stop and ask the user first.
 
-## Step 2 — Delegate the fix and tests
+## Step 2 — Reproduce the reported symptom
+
+Before delegating, reproduce the symptom through the project's real path: call the endpoint, run the
+command, or load the page, and read the output or the server log. Write what you observed as a
+`Reproduced:` line under the plan's `## Root cause`. If it does not reproduce, or the real cause
+differs from `## Root cause`, the plan is a hypothesis: correct it in place with a dated `CORRECTION`
+note, keep the original analysis, and tell the user before implementing anything.
+
+## Step 3 — Delegate the fix and tests
 
 ```
-Skill(skill: "sdlc-ralph-implement", args: "plans/triage/active/issue-<N>-*.md")
+Skill(skill: "moonlight:sdlc-ralph-implement", args: "plans/triage/active/issue-<N>-*.md")
 ```
 
 `sdlc-ralph-implement` reads the plan's `## Root cause` and `## Fix plan` checklist, applies each item,
@@ -39,13 +47,21 @@ the final `## Definition of Done` gate. Do not duplicate any of that logic here.
 - If it reports `status: blocked` — relay its `## Blocked` section to the user verbatim and stop.
   Do not attempt to silently finish the fix yourself.
 - If it reports `status: done` and the plan has a `## UAT verification` section — run the same
-  Phase 4.5 black-box loop `sdlc-feature-analyst` uses (spawn `sdlc-uat-tester`, retry via
-  `sdlc-ralph-implementer` up to `max_uat_rounds`, blocked on exhaustion) before Step 3.
-- If it reports `status: done` (no UAT section, or UAT passed) — proceed to Step 3. The plan file
+  Phase 4.5 black-box loop `sdlc-feature-analyst` uses (spawn `moonlight:sdlc-uat-tester`, retry via
+  `moonlight:sdlc-ralph-implementer` up to `max_uat_rounds`, blocked on exhaustion) before Step 3b.
+- If it reports `status: done` (no UAT section, or UAT passed) — proceed to Step 3b. The plan file
   is still in `plans/triage/active/` at this point (`sdlc-ralph-implement` never moves files — that
-  stays this skill's job, see Step 5).
+  stays this skill's job, see Step 6).
 
-## Step 3 — Optional smoke check
+## Step 3b — Red check on the regression test
+
+Once the delegation reports `status: done`, the plan's `## Tests` must include a regression test for the
+reported symptom. Confirm that it can fail. Create a temporary worktree at the base commit
+(`git worktree add <tmp-dir> <base>`), copy the new test into it, and run it there. It must fail for the
+reported reason. Never use `git stash` or `reset` on the user's uncommitted work. A test that passes on
+the unfixed code guards nothing: rewrite it, then run the delegation again. Remove the worktree afterwards.
+
+## Step 4 — Optional smoke check
 
 If this project has an obvious way to manually exercise the fix (a running dev server, a CLI
 command, a script) and the plan or the issue names a specific page/flow to check, exercise it now
@@ -53,7 +69,7 @@ and verify the specific behavior the issue reported is now correct. Skip this st
 there's no clear way to do it — it's a human-facing sanity check on top of `## Tests`, not a
 replacement for it, and not worth inventing a check that doesn't already fit the project.
 
-## Step 4 — Confirm resolution with user
+## Step 5 — Confirm resolution with user
 
 Use `AskUserQuestion` to ask:
 - Question: `"Issue #<N> — <one-line summary of what was fixed>. Mark as resolved?"`
@@ -62,7 +78,7 @@ Use `AskUserQuestion` to ask:
 If the user selects **No**, ask a follow-up `AskUserQuestion`: "What still looks wrong?" and
 investigate.
 
-## Step 5 — Update the tracker and move the plan
+## Step 6 — Update the tracker and move the plan
 
 Only if the user selected **Yes**:
 

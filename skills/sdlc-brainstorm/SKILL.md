@@ -19,7 +19,9 @@ entry.
 
 ## Step 2 — Find precedents
 
-Search `plans/implemented/`, `plans/triage/implemented/`, `plans/ideas/` and the changelog for past
+If the project has a codebase research file (`documentation/codebase-research.md` or
+`docs/codebase-research.md`), read its layout and flows sections first, so the search goes to the right
+folders. Then search `plans/implemented/`, `plans/triage/implemented/`, `plans/ideas/` and the changelog for past
 work touching the same page, model, endpoint or pattern (grep the key nouns of the idea). Pick up
 to 3 closest. For each, note what it did and what can be reused (endpoint shape, component, test, a
 decision already made). Use them as the default recommended answers in Step 3 — don't make the
@@ -27,13 +29,17 @@ user re-decide something a precedent settled.
 
 ## Step 3 — Grill
 
-`Skill(skill: "productivity-grilling", args: <the idea + precedents found>)`. Cover at least: the problem and
+`Skill(skill: "moonlight:productivity-grilling", args: <the idea + precedents found>)`. Grilling asks one
+question per turn; for a big idea it asks once whether to go one at a time or in rounds, and follows
+the answer. Cover at least: the problem and
 who has it, desired outcome, scope and non-goals, which surfaces it touches, edge cases, and how
 we'll know it worked — plus any product dimensions this project's `CLAUDE.md` says every change
 must address (languages, mobile, pricing tiers, …). Facts from code/data are yours to look up, not
 questions. Stop when no open questions remain.
 
 ## Step 4 — Write the idea file
+
+Write the file in English, whatever language the conversation uses.
 
 `plans/ideas/idea_<N>_<slug>.md`:
 
@@ -51,6 +57,11 @@ Who has it, what hurts today, why now.
 
 ## Desired outcome
 What the user sees/gets when this is done.
+
+## Proposed spec
+Gherkin scenarios this feature adds or changes, each tagged `New`, `Changed` or `Removed`, written in
+the form of the component's spec (`specs/<component>.md`). Omit the section if the project keeps no
+`specs/` folder. `sdlc-feature-analyst` checks the shipped behavior against it at close-out.
 
 ## Scope
 - In: ...
@@ -74,5 +85,8 @@ Anything deliberately left for sdlc-feature-analyst. Empty is fine.
 Show the file in chat. `AskUserQuestion`: "Idea #<N> saved to `<path>`. Confirmed?" — options
 "Confirm — build the plan", "Revise". On revise: take corrections, update, ask again.
 
-On confirm: set `status: confirmed`, then
-`Skill(skill: "sdlc-feature-analyst", args: "plans/ideas/idea_<N>_<slug>.md")`.
+On confirm: set `status: confirmed`, then add the success check to `plans/reminders.md` as a dated
+line, `- YYYY-MM-DD — #<N> success check: <check>`. Ask the user when the check can run. If they don't
+know, use the planned release date plus 28 days and say that the date is a placeholder. Create the
+file with a one-line header if it doesn't exist. Then
+`Skill(skill: "moonlight:sdlc-feature-analyst", args: "plans/ideas/idea_<N>_<slug>.md")`.

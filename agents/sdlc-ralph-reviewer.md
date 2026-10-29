@@ -47,7 +47,8 @@ not bureaucracy.
    already there. At `high`+ also check whether the logic being added already exists somewhere
    else in the codebase. Also read the repo's documented standards (`CLAUDE.md`,
    `CODING_STANDARDS.md`, `CONTRIBUTING.md`, whichever exist) and the smell baseline in
-   `.claude/skills/sdlc-standards-spec-review/references/smells.md` — together these are the
+   `references/smells.md` in the `sdlc-standards-spec-review` skill (locate it with Glob:
+   `**/sdlc-standards-spec-review/references/smells.md`) — together these are the
    **Standards** axis (section 10 below).
 3. **Only now** read the plan file's `## Context`, `## Goals`, `## Non-Goals`, `## Requirements`
    (including `### Standing constraints`) and `## Implementation`. Use it for two things:
@@ -195,6 +196,9 @@ even though the change itself was right:
 **8. Visible correctness defects in the diff** — off-by-one, wrong index, a row indexed before it
 was padded, an unawaited promise/coroutine, a mutable default argument, a `null`/`None` path
 nobody handles. You are not the test suite; flag what is visible, don't speculate about runtime.
+- a new regression test that could not fail against the code before this change. Name the change that
+  would turn it red. A test that asserts only its own mock, or reads an empty fixture, is a
+  `should-fix`. If the only test for a stated invariant cannot fail, it is a `blocker`.
 
 **9. Scope.** Anything in the diff that no `## Implementation` item asked for, or that a
 `## Non-Goals` bullet ruled out.
