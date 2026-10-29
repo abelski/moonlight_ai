@@ -48,6 +48,19 @@ Anything that already exists is skipped, and nothing is committed. Review the fi
 Headless runs (`claude -p`) need `--add-dir <plugin folder>`, because the starter `CLAUDE.md` lives in the plugin
 folder. An interactive session asks once instead.
 
+## Adapters
+
+The triage skills need to know where a project's issues live and how to close one. The project says so in a
+`## Moonlight adapters` section of its `CLAUDE.md`, one `Key: value` line each:
+
+- `Triage source`: a read-only command that prints the open issues as a JSON array.
+- `Resolve in tracker`: a command that takes one issue id and marks it resolved. It runs only after you confirm.
+- `Notify on resolve`: `yes` if the resolve command notifies the reporter, `no` if nothing does.
+
+`(not set)`, or a missing key, makes the skill ask you instead of guessing a command. Commands read secrets from
+the environment or `.env`: the section names variables, never values. `moonlight-init` asks for these values when a
+project triages issues, and the starter carries the section with every value at `(not set)`.
+
 ## What the plugin contains
 
 - **Skills** (`skills/`) — flat on disk, one folder per skill.
