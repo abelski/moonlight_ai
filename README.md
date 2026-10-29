@@ -1,5 +1,7 @@
 # moonlight
 
+<img src=".claude-plugin/icon.png" alt="moonlight logo" width="160">
+
 Claude Code plugin with our SDLC pipeline, plus a git-safety hook and a reminders hook. Installed
 once per machine or project and updated in place, instead of copying files between repos.
 
