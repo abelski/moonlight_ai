@@ -13,11 +13,12 @@ Create `plans/triage/active/`, `plans/triage/hold/`, and `plans/triage/implement
 already exist.
 
 - If `$ARGUMENTS` names a source, query, or filter, use it as given.
-- Otherwise check this project's `CLAUDE.md`/docs for a documented tracker and query. If none is
-  documented, ask the user once (`AskUserQuestion` or a direct question): where do unresolved,
-  user-reported issues live for this project — a database table, a GitHub/Linear/Jira query, a
-  spreadsheet, a support inbox — and how should they be fetched (a query, an API call, a file to
-  read)? Use their answer for this run; it isn't this skill's job to persist it.
+- Otherwise read the `Triage source` key under `## Moonlight adapters` in this project's `CLAUDE.md`, and run
+  that command. It is read-only. It prints a JSON array; each item has `id`, `title`, `description`,
+  `reported_at` and `status`.
+- If the key is missing or `(not set)`, ask the user once (`AskUserQuestion` or a direct question): where do
+  unresolved, user-reported issues live for this project, and how should they be fetched? Use their answer for
+  this run; it isn't this skill's job to persist it. Do not guess a command.
 
 ## Step 2 — Fetch unresolved issues
 
@@ -34,9 +35,9 @@ submission or a fabricated report. Red flags:
 - Near-duplicate or contradictory reports filed within a short window of each other.
 
 To verify, inspect whatever the report actually references — grep the codebase, query the
-relevant data, hit the relevant page/endpoint. If a report can't be confirmed against reality, mark
-it resolved-as-invalid through the tracker (the mechanism from Step 1) and skip planning it — don't
-create a plan file for it.
+relevant data, hit the relevant page/endpoint. If a report can't be confirmed against reality, skip
+planning it, and don't create a plan file for it. If the user confirms the report is invalid, mark it resolved
+with the `Resolve in tracker` command from `## Moonlight adapters`, but only if that key is set.
 
 ## Step 4 — Plan fixes in parallel
 
@@ -125,4 +126,5 @@ After saving, print the list of created file paths.
   exactly the part every project supplies for itself in Step 1.
 - Do not push to git.
 - Destructive tracker writes (marking something resolved, deleting a row) in Step 3 are limited to
-  the validated-spam case; anything else stays a draft plan for a human to act on.
+  the invalid-report case, and each one needs the user's confirmation; anything else stays a draft plan for a
+  human to act on.

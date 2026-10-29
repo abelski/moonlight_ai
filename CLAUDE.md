@@ -139,6 +139,22 @@ keep only what fits the project, drop the rest.
 - See [docs/skill-authoring.md](docs/skill-authoring.md) for the convention this machine's repos
   converged on (Agent Skills spec: frontmatter shape, directory layout, size limits).
 
+## Moonlight adapters
+
+Project-specific commands for the triage skills. One `Key: value` line each. A key that is missing or
+`(not set)` makes the skill stop and ask. Never guess a command.
+
+- Triage source: (not set)
+- Resolve in tracker: (not set)
+- Notify on resolve: (not set)
+
+- `Triage source`: a read-only command that prints the open issues as a JSON array. Each item has `id`,
+  `title`, `description`, `reported_at` and `status`.
+- `Resolve in tracker`: a command that takes one issue id and marks it resolved. It runs only after the user
+  confirms.
+- `Notify on resolve`: `yes` if the resolve command already notifies the reporter, `no` if nothing does.
+- Commands read secrets from the environment or `.env`. Write variable names here, never values.
+
 ## Useful patterns not copied here verbatim
 
 See [docs/patterns.md](docs/patterns.md) — heavier architectural patterns observed elsewhere on

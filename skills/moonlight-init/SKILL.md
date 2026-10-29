@@ -71,6 +71,7 @@ Show one table. For each item, say whether init creates it, skips it because it 
 | 4 | `specs/` | create the folder, if missing; then offer one spec per component (Step 5b) |
 | 5 | `.gitignore` | add the lines that are missing: `.env`, plus the usual build-output and dependency folders for the detected stack (`node_modules/` for Node, `.venv/` and `__pycache__/` for Python, `target/` for Maven and Cargo, `dist/` or `build/` where the build writes there) |
 | 6 | `documentation/codebase-research.md` or `docs/codebase-research.md` | create from Step 3, if missing |
+| 7 | `## Moonlight adapters` in `CLAUDE.md` | comes from the starter with `(not set)` values. If the project triages user-reported issues, ask for the three values and fill them in. Otherwise leave `(not set)` |
 
 Show a short summary of the research next to the table: the stack, the entry points, and the top three risks.
 
@@ -91,7 +92,8 @@ Do not create a changelog. The feature skills append to one only when the projec
     `## Useful patterns not copied here verbatim`;
   - add a `## Commands` section listing each command from Step 2 with its source file;
   - add the main branch name under `## Before making changes`;
-  - add one line under `## Project layout` pointing to the research file.
+  - add one line under `## Project layout` pointing to the research file;
+  - fill the `## Moonlight adapters` values the user gave in Step 4 row 7. Leave the rest at `(not set)`.
   Tell the user to trim the rest to what fits.
 - `.gitignore`: append only the lines from Step 4 row 5 that are not already there, one per line.
 - Create the folders, the reminders file, `specs/` and the research file from Step 4.
@@ -116,6 +118,7 @@ Then report it.
 ## Step 6 — Report
 
 - List what was created, what was skipped, and what the user must decide.
+- Adapter keys still at `(not set)`: the triage skills will ask the user instead of running a command.
 - Next steps: the user reviews the research file and commits the setup (`git add -A && git commit -m "chore:
   set up moonlight"`), then runs `/moonlight:sdlc-brainstorm <first change>`. The code has no plans yet, so the
   precedent search will find nothing. That is expected.

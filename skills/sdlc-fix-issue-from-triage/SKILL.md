@@ -4,8 +4,8 @@ description: Fix a triaged issue from plans/triage/active/ — delegate the fix 
 ---
 
 Fix a triaged issue by following its pre-written plan from `plans/triage/active/`. This skill
-knows nothing about any *specific* tracker — Step 6 is where the project's actual
-resolve-in-tracker mechanism gets plugged in.
+knows nothing about any *specific* tracker — Step 6 runs the project's `Resolve in
+tracker` command from `## Moonlight adapters` in `CLAUDE.md`.
 
 ## Step 1 — Locate the plan file
 
@@ -82,14 +82,15 @@ investigate.
 
 Only if the user selected **Yes**:
 
-1. Mark the issue resolved through whatever mechanism this project's tracker uses (an API call, a
-   database update, a status field edit) — the specific command is project-specific and not
-   something to guess at; use what the plan or this project's docs already show, or ask the user if
-   neither says. If the tracker's own resolution flow sends notifications, let it do that — don't
-   invent a separate notification step here.
-2. Move the plan file: `plans/triage/active/issue-<N>-*.md` →
+1. Read the `Resolve in tracker` key under `## Moonlight adapters` in this project's `CLAUDE.md`. If the key is
+   missing or `(not set)`, stop this step and ask the user how this issue gets resolved. Do not guess a command.
+   Otherwise run the command with the issue id.
+2. Notifications: read the `Notify on resolve` key. `yes` means the resolve command already notifies the reporter;
+   say so in the report. `no`, or a missing value, means nothing is sent; say that in the report, and let the user
+   decide who tells the reporter. Never send a notice from this skill.
+3. Move the plan file: `plans/triage/active/issue-<N>-*.md` →
    `plans/triage/implemented/IMPLEMENTED-issue-<N>-*.md`.
-3. Report: "Issue #<N> marked resolved. Plan moved to `implemented/`." plus the commands for the
+4. Report: "Issue #<N> marked resolved. Plan moved to `implemented/`." plus the commands for the
    user to run — `git add -A && git commit -m "fix(<area>): <summary> (issue #<N>)"`, then
    `git checkout main && git merge --no-ff fix/<N>-<slug>`. Only the user commits and merges.
 
