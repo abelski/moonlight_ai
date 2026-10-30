@@ -2,169 +2,193 @@
 
 <img src=".claude-plugin/icon.png" alt="moonlight logo" width="160">
 
-Claude Code plugin with our SDLC pipeline, plus a git-safety hook and a reminders hook. Installed
-once per machine or project and updated in place, instead of copying files between repos.
+A Claude Code plugin with our SDLC pipeline: from an idea to a reviewed, tested branch, with a few
+safety hooks. Install it once, update it in place, and stop copying files between repos.
 
-Repo: `github.com/abelski/moonlight_ai`. License: MIT (see [LICENSE](LICENSE)).
+- Repo: `github.com/abelski/moonlight_ai`
+- License: MIT, see [LICENSE](LICENSE)
 
-## Install
-
-Requires `jq` (the git-safety hook reads its input with it) and `python3` (the reminders hook).
-
-From GitHub:
+## Quick start
 
 ```bash
 claude plugin marketplace add abelski/moonlight_ai
 claude plugin install moonlight@moonlight
 ```
 
-From a local clone (what to use while developing the plugin):
+Then, in an existing project, run `/moonlight:moonlight-init` once. For a new feature, pick an
+[entry point](#entry-points).
 
-```bash
-claude plugin marketplace add /path/to/moonlight_ai
-claude plugin install moonlight@moonlight
-```
+Requirements: `jq` (the git-safety hook reads its input with it) and `python3` (the reminders hook).
 
-Update later with `claude plugin update moonlight@moonlight`, or ask Claude to run the
-`moonlight-update` skill. Restart Claude Code after an update.
+## Install and update
 
-Inside the plugin, every skill and agent is namespaced `moonlight:<name>`, for example
-`moonlight:sdlc-feature-analyst`. The names below are the bare names. Reference them the same way from
-other skills: `Skill(skill: "moonlight:<name>")` and `subagent_type: "moonlight:<name>"`. Bare names do not resolve.
+| Task | Command |
+|---|---|
+| Install from GitHub | `claude plugin marketplace add abelski/moonlight_ai` and `claude plugin install moonlight@moonlight` |
+| Install from a local clone | `claude plugin marketplace add /path/to/moonlight_ai` and `claude plugin install moonlight@moonlight` |
+| Update | `claude plugin update moonlight@moonlight`, or ask Claude to run `moonlight-update` |
+
+Restart Claude Code after an update.
+
+Every skill and agent is namespaced `moonlight:<name>`, for example `moonlight:sdlc-feature-analyst`.
+Reference them the same way from other skills: `Skill(skill: "moonlight:<name>")` and
+`subagent_type: "moonlight:<name>"`. Bare names do not resolve.
+
+## Entry points
+
+Three ways in. They run the same phases. They differ in how much you take part.
+
+| Entry point | You take part in | Start with |
+|---|---|---|
+| `/moonlight:sdlc-brainstorm` (standard) | grilling of the idea, plan review, following the implementation, acceptance | an idea |
+| `/moonlight:moonlight-fast <requirement>` | grilling of the idea, plan review, acceptance | a requirement text |
+| `/moonlight:moonlight-calm <requirement>` | the requirement, then acceptance | a requirement text |
+
+### The phases
+
+Every flow runs these phases:
+
+1. **Idea**: what and why.
+2. **Design**: the plan, the proposed spec change, and a review of the plan.
+3. **Implementation**: TDD, on a feature branch.
+4. **Code review**.
+5. **Validation and acceptance**.
+6. **Documentation and specs**.
+7. **Check**: the token use of the run.
+8. **Close**.
+
+### What `moonlight-calm` does on its own
+
+`moonlight-calm` asks you nothing until the end. Two stand-in agents make the decisions instead:
+`sdlc-stand-in-product-owner` answers open points, and `sdlc-stand-in-tech-lead` reviews the plan.
+Every decision goes into the plan's `## Decisions` section, with its source and confidence.
+
+The run stops and asks you only when:
+
+- a stand-in is not confident (`low`),
+- a flag is raised: `security`, `auth`, `data-migration`, `breaking-change` or `public-api`,
+- the plan has more than 12 checklist items,
+- a review asks for changes twice in a row,
+- the implementation is blocked,
+- a UAT section fails,
+- or the change is ready for your acceptance.
+
+Commits and merges stay with you in every flow. Claude creates the feature branch and never commits.
 
 ## Start on an existing project
 
 Run `moonlight-init` once in the repo. It works in this order:
 
-1. Surveys the code for its test, lint and build commands, and notes what is missing.
-2. Researches the codebase into `docs/codebase-research.md` (or `documentation/codebase-research.md` when that
-   folder exists): a map with `file:line` references, which the brainstorm and planning skills read first.
-3. Shows one table of what it will create, and asks once.
-4. Applies it. It creates `CLAUDE.md` from the starter, the `plans/` folders, `plans/reminders.md`, `specs/`, and
-   the `.gitignore` lines for the detected stack.
-5. If you pick it, writes one spec per component under `specs/` through the `sdlc-spec-writer` agent. Each spec is
-   one agent run, so pick components on large repos.
+1. It surveys the code for the test, lint and build commands, and notes what is missing.
+2. It researches the codebase into `docs/codebase-research.md` (or `documentation/codebase-research.md`
+   if that folder exists). The file maps the code with `file:line` references, and the brainstorm and
+   planning skills read it first.
+3. It shows one table of what it will create, and asks once.
+4. It applies the table. It creates `CLAUDE.md` from the starter, the `plans/` folders, `plans/reminders.md`,
+   `specs/`, and the `.gitignore` lines for the detected stack.
+5. If you choose, it writes one spec per component under `specs/`. Each spec is one agent run, so pick
+   components on large repos.
 
-Anything that already exists is skipped, and nothing is committed. Review the files, then commit them yourself.
+Existing files are skipped. Nothing is committed: review the files, then commit them yourself.
 
-Headless runs (`claude -p`) need `--add-dir <plugin folder>`, because the starter `CLAUDE.md` lives in the plugin
-folder. An interactive session asks once instead.
-
-## Entry points
-
-Three ways in. They run the same phases, and differ in how much you take part.
-
-| Entry point | You take part in | Start with |
-|---|---|---|
-| `/moonlight:sdlc-brainstorm` (standard) | grilling of the idea, plan review, following the implementation steps, acceptance | an idea |
-| `/moonlight:moonlight-fast <requirement>` | grilling of the idea, plan review, acceptance | a requirement text |
-| `/moonlight:moonlight-calm <requirement>` | the idea, then acceptance | a requirement text |
-
-Phases, in every flow: 1 idea → 2 design (plan, proposed spec, plan review) → 3 implementation (TDD, on a feature branch)
-→ 4 code review → 5 validation and acceptance → 6 documentation and specs → 7 check (token use) → 8 close.
-
-`moonlight-calm` uses two stand-in agents, `sdlc-stand-in-product-owner` and `sdlc-stand-in-tech-lead`, instead of
-asking you. Every decision goes into the plan's `## Decisions` section with its source and confidence. The run stops and
-asks you only when it must escalate: a `low` confidence, a `security`, `auth`, `data-migration`, `breaking-change` or
-`public-api` flag, more than 12 checklist items, two review rounds of requested changes, a blocked implementation, or a
-failed UAT section. It also stops at acceptance.
-
-Commits and merges stay with you in every flow. Claude creates the feature branch and never commits.
+Headless runs (`claude -p`) need `--add-dir <plugin folder>`, because the starter `CLAUDE.md` lives in
+the plugin folder. An interactive session asks once instead.
 
 ## Adapters
 
-The triage skills need to know where a project's issues live and how to close one. The project says so in a
-`## Moonlight adapters` section of its `CLAUDE.md`, one `Key: value` line each:
+The triage skills need two things from the project: where the issues live, and how to close one. The
+project says so in a `## Moonlight adapters` section of its `CLAUDE.md`, one `Key: value` line each:
 
-- `Triage source`: a read-only command that prints the open issues as a JSON array.
-- `Resolve in tracker`: a command that takes one issue id and marks it resolved. It runs only after you confirm.
-- `Notify on resolve`: `yes` if the resolve command notifies the reporter, `no` if nothing does.
+| Key | Meaning |
+|---|---|
+| `Triage source` | A read-only command that prints the open issues as a JSON array. |
+| `Resolve in tracker` | A command that takes one issue id and marks it resolved. It runs only after you confirm. |
+| `Notify on resolve` | `yes` if the resolve command notifies the reporter, `no` if nothing does. |
 
-`(not set)`, or a missing key, makes the skill ask you instead of guessing a command. Commands read secrets from
-the environment or `.env`: the section names variables, never values. `moonlight-init` asks for these values when a
-project triages issues, and the starter carries the section with every value at `(not set)`.
+If a key is missing or set to `(not set)`, the skill asks you instead of guessing a command. Commands read
+secrets from the environment or `.env`. The section names variables, never values.
 
-## What the plugin contains
+## Skills
 
-- **Skills** (`skills/`) — flat on disk, one folder per skill.
-  - **SDLC (`sdlc-*`)** — the idea → plan → implement → review pipeline.
-    - `sdlc-brainstorm` — first step of a feature: find precedents in past plans, grill the user, write a
-      confirmed `plans/ideas/idea_<N>_<slug>.md` holding the what/why, including a `## Proposed spec` in Gherkin.
-      On confirm, the success check becomes a dated line in `plans/reminders.md`. Hands off to
-      `sdlc-feature-analyst`.
-    - `sdlc-feature-analyst` — idea file or raw request → plan → cold review by a fresh agent → approve →
-      branch `feat/<N>-<slug>` → hand off to `sdlc-ralph-implement`. Optional `## Prototype` step for plans that
-      change visible UI. At close-out, a spec gate checks the shipped behavior against the idea's proposed spec.
-      The user commits and merges.
-    - `sdlc-ralph-implement` — bounded, resumable, self-correcting loop that executes a checklist plan:
-      implement → review ⇄ validate, repeated until a round is clean or the budget runs out.
-    - `sdlc-triage` — bulk-intake sibling to `sdlc-feature-analyst`: fetch unresolved issues from this
-      project's own tracker (source left for the project to plug in), filter spam/test noise, draft a bugfix
-      plan per confirmed issue into `plans/triage/active/`.
-    - `sdlc-fix-issue-from-triage` — companion to `sdlc-triage`: reproduce the symptom before fixing, execute
-      one drafted plan via `sdlc-ralph-implement`, check that the regression test fails on the unfixed code,
-      confirm resolution with the user, then update the tracker (mechanism left for the project to plug in) and
-      move the plan to `implemented/`.
-    - `sdlc-standards-spec-review` — two-axis diff review (Standards: repo conventions + Fowler smell baseline;
-      Spec: does it match the plan) in parallel sub-agents. Fork of Matt Pocock's `code-review` (MIT), renamed to
-      not shadow the built-in `/code-review` bug hunter.
-    - `sdlc-diagnosing-bugs` — diagnosis loop for hard bugs and perf regressions: find the cause before fixing.
-    - `sdlc-tdd` — test-first red-green-refactor. A bug fix starts red on the unfixed code.
-    - `sdlc-pr` — how to write a PR body.
-    - `sdlc-update-readme` — keep README.md in sync with real changes only.
-  - **Conversation**
-    - `productivity-grilling` — interview the user about a plan, decision or idea, one question per turn.
-      For a big idea it asks first whether to go one at a time or in rounds.
-    - `productivity-grill-me` — user-typed alias for `productivity-grilling`.
-  - **Setup and maintenance**
-    - `moonlight-init` — set up an existing repo for the moonlight skills, without overwriting anything (see
-      "Start on an existing project").
-    - `moonlight-update` — update the installed plugin from its marketplace and report the version.
-- **Agents** (`agents/`) — all SDLC, same `sdlc-` prefix as the skills.
-  - `sdlc-ralph-implementer` — the mechanical worker `sdlc-ralph-implement` spawns per pass.
-  - `sdlc-ralph-reviewer` — read-only code-review gate (security, dead code, over-engineering,
-    config-vs-hardcoded, architecture fit, and regression tests that could not fail), reporting on the same
-    Standards/Spec axes as `sdlc-standards-spec-review` and reusing its smell baseline. Runs as
-    `sdlc-ralph-implement`'s Step 4.5 gate after implementation, before validation; blockers go back to the
-    implementer.
-  - `sdlc-spec-writer` — maintains `specs/<component>.md`, a living current-behavior doc (Gherkin scenarios).
-    It runs after a plan's Definition-of-Done gate passes, from `sdlc-feature-analyst`'s wrap-up. `moonlight-init`
-    also runs it as a baseline, with no plan, to write the first spec of each component.
-  - `sdlc-uat-tester` — black-box PASS/FAIL/INCONCLUSIVE verifier with zero codebase access, driving the running
-    app via a project-supplied instrument (CLI, HTTP call, probe script) — optional add-on, invoked from
-    `sdlc-feature-analyst`'s Phase 4.5 only when a plan has a `## UAT verification` section.
-- **Hooks** (`hooks/hooks.json`):
-  - `block-git-commit-push.sh` (PreToolUse on Bash) — only the user commits or pushes. Also blocks
-    `reset --hard`, `clean -f`, `branch -D`, `checkout .` and `restore .`.
-  - `reminders.py` (SessionStart) — shows `plans/reminders.md` lines due within 3 days.
-- **Starter** (`CLAUDE.md` at the plugin root) — the working practices that `moonlight-init` copies into a project.
-  It is not loaded into the plugin's own sessions.
+### Feature pipeline
 
-## Not in the plugin yet
+| Skill | What it does |
+|---|---|
+| `sdlc-brainstorm` | First step of a feature. Finds precedents, grills you, writes the idea file with a `## Proposed spec`. On confirm, adds the success check to `plans/reminders.md`. |
+| `sdlc-feature-analyst` | Turns an idea or a raw request into a plan. A fresh agent reviews the plan, you approve it, then it hands off to `sdlc-ralph-implement`. The spec gate runs at close-out. |
+| `sdlc-ralph-implement` | Runs a checklist plan to the end: implement, review and validate, repeat until the round is clean or the retry budget runs out. Resumable. |
+| `sdlc-tdd` | Test-first red-green-refactor. A bug fix starts red on the unfixed code. |
+| `sdlc-standards-spec-review` | Reviews a diff on two axes, standards and spec, in parallel sub-agents. A fork of Matt Pocock's `code-review` (MIT). |
+| `sdlc-diagnosing-bugs` | Finds the cause of a hard bug or a performance regression before any fix. |
+| `sdlc-pr` | Writes a PR body. |
+| `sdlc-update-readme` | Keeps README.md in sync with real changes only. |
 
-These stay in this repo's `.claude/` and are not installed by the plugin:
+### Bug pipeline
 
-- `.claude/skills/productivity-*` — conversation tools (handoff, retro, research,
-  writing-for-agents, show-me, wait-what).
-- `.claude/skills/helper-*` — one-off utilities (`helper-do-in-my-chrome`, `helper-sql`).
-- `.claude/output-styles/talk-to-me.md` — short, blunt, plain-language replies.
+| Skill | What it does |
+|---|---|
+| `sdlc-triage` | Fetches unresolved issues through `Triage source`, filters out spam and test noise, and drafts a bugfix plan per confirmed issue into `plans/triage/active/`. |
+| `sdlc-fix-issue-from-triage` | Reproduces the symptom, fixes it through `sdlc-ralph-implement`, checks that the regression test fails on the unfixed code, then closes the issue through `Resolve in tracker` after you confirm. |
+
+### Conversation and setup
+
+| Skill | What it does |
+|---|---|
+| `productivity-grilling` | Interviews you about a plan, decision or idea, one question per turn. For a big idea it asks first: one at a time, or in rounds. |
+| `productivity-grill-me` | Your alias for `productivity-grilling`. Only you can run it. |
+| `productivity-handoff` | Writes a handoff document so a fresh agent can pick up the work. Only you can run it. |
+| `productivity-research` | Investigates a question against high-trust primary sources and saves the findings as a Markdown file in the repo. |
+| `productivity-retro` | Runs a retrospective on a coding session. Only you can run it. |
+| `productivity-show-me` | Explains the current topic visually, with concise diagrams and focused HTML artifacts. Only you can run it. |
+| `productivity-wait-what` | Re-pitches the last message in plain terms when it did not land. Only you can run it. |
+| `productivity-writing-for-agents` | Guidance for writing documents that an agent reads: skills, `AGENTS.md`, `CLAUDE.md`. |
+| `moonlight-init` | Sets up an existing repo. See [Start on an existing project](#start-on-an-existing-project). |
+| `moonlight-update` | Updates the installed plugin from its marketplace and reports the version. |
+
+## Agents
+
+Agents run inside skills. You do not call them directly.
+
+| Agent | Role |
+|---|---|
+| `sdlc-ralph-implementer` | Does one pass of a checklist plan for `sdlc-ralph-implement`. Writes the failing test first. |
+| `sdlc-ralph-reviewer` | Read-only review gate after each implementation pass. Checks security, dead code, over-engineering and regression tests that could not fail. |
+| `sdlc-spec-writer` | Writes `specs/<component>.md`, a Gherkin description of what a component does now. |
+| `sdlc-uat-tester` | Black-box tester with no codebase access. Runs only when a plan has a `## UAT verification` section. |
+| `sdlc-stand-in-product-owner` | Answers open questions in `moonlight-calm`. Returns an answer, a confidence and flags. |
+| `sdlc-stand-in-tech-lead` | Reviews a plan in `moonlight-calm`. Approves it, or returns blockers. |
+
+## Hooks
+
+| Hook | Event | What it does |
+|---|---|---|
+| `block-git-commit-push.sh` | PreToolUse on Bash | Blocks `git commit` and `git push` from Claude, and the destructive commands `reset --hard`, `clean -f`, `branch -D`, `checkout .` and `restore .`. |
+| `reminders.py` | SessionStart | Shows the lines in `plans/reminders.md` that are due within 3 days. |
+
+## Starter CLAUDE.md
+
+`CLAUDE.md` at the plugin root holds the working practices that `moonlight-init` copies into a project:
+planning, testing, git and deploy safety, and knowledge capture. Copy what fits; trim the rest. The plugin
+itself does not load this file into its own sessions.
 
 ## Develop the plugin
 
-Test local edits without installing: `claude --plugin-dir .` from this repo. Check manifests with
-`claude plugin validate .`. The plugin is developed with the plugin itself: install it from the local clone
-(see Install) and use it in this repo.
+- Test local edits without installing: `claude --plugin-dir .` from this repo.
+- Check the manifests: `claude plugin validate .`.
+- Use the plugin in this repo as well: install it from the local clone (see [Install and update](#install-and-update)).
 
-## License
+## Not in the plugin yet
 
-MIT, see [LICENSE](LICENSE). Material adapted from other MIT-licensed repos keeps their copyright lines in
-`LICENSE`, and [docs/third-party.md](docs/third-party.md) lists each adaptation.
+These stay in this repo's `.claude/` folder and are not installed by the plugin:
+
+- `.claude/skills/helper-*`: `helper-do-in-my-chrome` and `helper-sql`.
+- `.claude/output-styles/talk-to-me.md`: short, plain-language replies.
 
 ## Docs
 
-- **[CLAUDE.md](CLAUDE.md)** — the starter set of working practices (planning, testing, git/deploy
-  safety, knowledge capture). `moonlight-init` copies it into a project's `CLAUDE.md`; trim to what fits.
-- **`docs/third-party.md`** — attribution for material adapted from Matt Pocock's skills and HumanLayer's `show-me` (both MIT).
-- **`docs/skill-authoring.md`** — the Agent Skills spec convention, and where skills live in this repo.
-- **`docs/patterns.md`** — heavier patterns seen elsewhere (a tiered plan-and-verify loop with black-box
-  verification, a deploy-safety protocol, agent-loop design notes) that are pointers to their source repo, not copies.
+| File | What it is |
+|---|---|
+| [CLAUDE.md](CLAUDE.md) | The starter set of working practices. |
+| [docs/third-party.md](docs/third-party.md) | Attribution for material adapted from Matt Pocock's skills and HumanLayer's `show-me`. Both MIT. |
+| [docs/skill-authoring.md](docs/skill-authoring.md) | The Agent Skills convention, and where skills live in this repo. |
+| [docs/patterns.md](docs/patterns.md) | Heavier patterns seen elsewhere, as pointers to their source. |

@@ -29,7 +29,8 @@ Look at the code the requirement names, as in `moonlight-fast`. A large repo get
 2. Write `plans/improvements/active/plan_<N>_<slug>.md` in the format of `sdlc-feature-analyst` Phase 2, with `## Decisions`
    and `## Proposed spec` (if the project keeps `specs/`). Set `started_at: null`.
 3. Ask `moonlight:sdlc-stand-in-tech-lead` to review the plan against the requirement and the research. It approves, or
-   returns findings. On findings, fix the plan and ask once more. A second round of findings escalates.
+   returns blockers (notes never send the plan back). On blockers, fix the plan and ask once more. Blockers still
+   standing after the second round escalate.
 
 ## Escalation (the only other place the user is asked)
 
