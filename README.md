@@ -165,6 +165,12 @@ Agents run inside skills. You do not call them directly.
 | `block-git-commit-push.sh` | PreToolUse on Bash | Blocks `git commit` and `git push` from Claude, and the destructive commands `reset --hard`, `clean -f`, `branch -D`, `checkout .` and `restore .`. |
 | `reminders.py` | SessionStart | Shows the lines in `plans/reminders.md` that are due within 3 days. |
 
+## Output style
+
+`talk-to-user` replies in short, plain words: the point first, short lines, and the facts kept exact. It is on by
+default while the plugin is enabled, and it overrides the output style you pick with `/output-style`. Disable the
+plugin to turn it off. It keeps Claude Code's coding instructions.
+
 ## Starter CLAUDE.md
 
 `CLAUDE.md` at the plugin root holds the working practices that `moonlight-init` copies into a project:
@@ -182,7 +188,6 @@ itself does not load this file into its own sessions.
 These stay in this repo's `.claude/` folder and are not installed by the plugin:
 
 - `.claude/skills/helper-*`: `helper-do-in-my-chrome` and `helper-sql`.
-- `.claude/output-styles/talk-to-me.md`: short, plain-language replies.
 
 ## Docs
 

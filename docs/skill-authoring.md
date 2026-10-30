@@ -7,7 +7,7 @@ Convention used consistently across this machine's other repos, following the
 
 Anything authored for a specific project — a command, a skill, an agent — is checked into that project's
 repo, never placed in the user-global `~/.claude/`. In this repo, shared skills, agents and hooks live in the
-moonlight plugin folders at the root (`skills/`, `agents/`, `hooks/`) and ship as one plugin. Repo-local
+moonlight plugin folders at the root (`skills/`, `agents/`, `hooks/`, `output-styles/`) and ship as one plugin. Repo-local
 personal tools that are not in the plugin yet stay in `.claude/skills/`. Global scope is for genuinely
 cross-project tooling only.
 

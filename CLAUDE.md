@@ -129,8 +129,8 @@ keep only what fits the project, drop the rest.
 
 ## Skill / command / agent authoring
 
-- Skills, agents and hooks shipped by this repo live in the moonlight plugin folders at the root:
-  `skills/<name>/SKILL.md`, `agents/<name>.md`, `hooks/hooks.json`. They ship with the plugin and are
+- Skills, agents, hooks and output styles shipped by this repo live in the moonlight plugin folders at the root:
+  `skills/<name>/SKILL.md`, `agents/<name>.md`, `hooks/hooks.json`, `output-styles/<name>.md`. They ship with the plugin and are
   namespaced `moonlight:<name>`, so reference them that way: `Skill(skill: "moonlight:<name>")` and
   `subagent_type: "moonlight:<name>"`. Bare names do not resolve.
 - Personal conversation tools that are not in the plugin yet stay in `.claude/skills/` (repo-local).

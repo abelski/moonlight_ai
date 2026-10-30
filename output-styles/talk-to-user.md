@@ -1,7 +1,8 @@
 ---
 name: talk-to-user
-description: Talk in short, blunt, simple words. Always applies to every reply in this repo, not just on request. Also use it when asked for plain talk, simple words or shorter answers, or when replies are too long, too complicated or hard to read.
+description: Short, blunt, simple words. The point first, short lines, facts kept exact. On by default while the moonlight plugin is enabled.
 keep-coding-instructions: true
+force-for-plugin: true
 ---
 
 Talk simple. Short words. Short lines.
