@@ -15,8 +15,8 @@ claude plugin marketplace add abelski/moonlight_ai
 claude plugin install moonlight@moonlight
 ```
 
-Then, in an existing project, run `/moonlight:moonlight-init` once. For a new feature, pick an
-[entry point](#entry-points).
+Then, in an existing project, run `/moonlight:moonlight-init` once. For a new project, see
+[Start a new project](#start-a-new-project). For a new feature, pick an [entry point](#entry-points).
 
 Requirements: `jq` (the git-safety hook reads its input with it) and `python3` (the reminders hook).
 
@@ -77,7 +77,8 @@ Commits and merges stay with you in every flow. Claude creates the feature branc
 
 ## Start on an existing project
 
-Run `moonlight-init` once in the repo. It works in this order:
+Run `moonlight-init` once in the repo. It needs a git repository: without one, it stops and asks you to run
+`git init`. It works in this order:
 
 1. It surveys the code for the test, lint and build commands, and notes what is missing.
 2. It researches the codebase into `docs/codebase-research.md` (or `documentation/codebase-research.md`
@@ -93,6 +94,14 @@ Existing files are skipped. Nothing is committed: review the files, then commit 
 
 Headless runs (`claude -p`) need `--add-dir <plugin folder>`, because the starter `CLAUDE.md` lives in
 the plugin folder. An interactive session asks once instead.
+
+## Start a new project
+
+`moonlight-init` is built for a repo that already has code. For a new project:
+
+1. Create the folder, run `git init`, and write the first code.
+2. Commit it, then run `/moonlight:moonlight-init` as in [Start on an existing project](#start-on-an-existing-project).
+3. Start the first feature with an [entry point](#entry-points).
 
 ## Adapters
 
