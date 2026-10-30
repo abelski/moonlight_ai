@@ -39,7 +39,7 @@ Reference them the same way from other skills: `Skill(skill: "moonlight:<name>")
 
 ## Entry points
 
-Three ways in. They run the same phases. They differ in how much you take part.
+Three ways in. They cover the same steps. They differ in how much you take part.
 
 | Entry point | You take part in | Start with |
 |---|---|---|
@@ -49,7 +49,7 @@ Three ways in. They run the same phases. They differ in how much you take part.
 
 ### The phases
 
-Every flow runs these phases:
+The feature flows cover these steps. Names and order differ a little per flow, and code review runs inside Implementation:
 
 1. **Idea**: what and why.
 2. **Design**: the plan, the proposed spec change, and a review of the plan.
@@ -65,7 +65,7 @@ issue in the tracker.
 
 ### Session state and spend report
 
-While a flow runs, the plan file ends with a `## Session state` block: a fenced `json` block with the flow, the current
+While a flow runs, the plan file holds a `## Session state` block: a fenced `json` block with the flow, the current
 phase, each phase's status (`pending`, `running`, `waiting`, `blocked`, `done`), who waits (`you` or nobody), the
 session ids with their start times, the branch and the idea file. No token numbers. The flows write it with
 `scripts/plan-state.py` (`init` once the plan exists, `phase` at the start of each phase). A clean session given the plan
@@ -84,6 +84,7 @@ Every decision goes into the plan's `## Decisions` section, with its source and 
 
 The run stops and asks you only when:
 
+- the working tree is not clean at the start,
 - a stand-in is not confident (`low`),
 - a flag is raised: `security`, `auth`, `data-migration`, `breaking-change` or `public-api`,
 - the plan has more than 12 checklist items,
@@ -124,7 +125,7 @@ the plugin folder. An interactive session asks once instead.
 
 ## Adapters
 
-The triage skills need two things from the project: where the issues live, and how to close one. The
+The triage skills need three things from the project: where the issues live, how to close one, and whether closing one notifies the reporter. The
 project says so in a `## Moonlight adapters` section of its `CLAUDE.md`, one `Key: value` line each:
 
 | Key | Meaning |
@@ -144,7 +145,7 @@ four layers. Use the first one that works.
 
 | Layer | Where | Use it for |
 |---|---|---|
-| Values | `## Commands` and `## Moonlight adapters` in `CLAUDE.md` | The test, lint and build commands, and the issue tracker. The planner copies `## Commands` into each plan's Validation and Definition of Done. |
+| Values | `## Commands` and `## Moonlight adapters` in `CLAUDE.md` | The test, lint and build commands, and the issue tracker. |
 | Rules | the rest of `CLAUDE.md` | Rules the project never breaks, for example "UI changes are checked in RU and EN at 375px". The planner copies them into each plan's `### Standing constraints`. |
 | Gates | hooks in the project's `.claude/settings.json` | "Never" rules, such as blocking a production deploy command. A gate is code, not a sentence in `CLAUDE.md`. |
 | Wrappers | a project skill with its own name | A different order of steps. It calls `Skill(skill: "moonlight:<name>")` and adds steps before or after. |
@@ -165,7 +166,7 @@ Last resort: copy a skill under another name, note the plugin version it came fr
 | `sdlc-brainstorm` | First step of a feature. Finds precedents, grills you, writes the idea file with a `## Proposed spec`. On confirm, adds the success check to `plans/reminders.md`. |
 | `sdlc-feature-analyst` | Turns an idea or a raw request into a plan. A fresh agent reviews the plan, you approve it, then it hands off to `sdlc-ralph-implement`. The spec gate runs at close-out. |
 | `sdlc-ralph-implement` | Runs a checklist plan to the end: implement, review and validate, repeat until the round is clean or the retry budget runs out. Resumable. |
-| `sdlc-tdd` | Test-first red-green-refactor. A bug fix starts red on the unfixed code. |
+| `sdlc-tdd` | Test-first red-green loop. A bug fix starts red on the unfixed code. |
 | `sdlc-standards-spec-review` | Reviews a diff on two axes, standards and spec, in parallel sub-agents. A fork of Matt Pocock's `code-review` (MIT). |
 | `sdlc-diagnosing-bugs` | Finds the cause of a hard bug or a performance regression before any fix. |
 | `sdlc-pr` | Writes a PR body. |

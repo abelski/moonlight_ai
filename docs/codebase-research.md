@@ -8,7 +8,7 @@ Read-only map of this repo. Every claim cites a file or `file:line`. `(inferred)
 (brainstorm, plan with a cold review, checklist implementation with a review gate, TDD, triage, specs, PR bodies),
 two hooks, a side-panel mod, one output style and two scripts, token report and plan session state (`README.md:5-8`,
 `.claude-plugin/plugin.json`). The root `CLAUDE.md` is a starter template that `moonlight-init` copies into other
-projects, and the plugin does not load it into its own sessions (`README.md:238-242`, `CLAUDE.md:3-6`).
+projects, and the plugin does not load it into its own sessions (`README.md:239-243`, `CLAUDE.md:3-6`).
 
 ## 2. Stack and entry points
 
@@ -28,7 +28,7 @@ projects, and the plugin does not load it into its own sessions (`README.md:238-
 - `scripts/`: `token-report.py` (token totals; `--plan` writes a plan's `## spendreport`) and `plan-state.py` (a plan's `## Session state` block), called by the entry-point skills, `sdlc-feature-analyst` and `sdlc-fix-issue-from-triage`.
 - `docs/`: `skill-authoring.md`, `patterns.md`, `third-party.md`, `panel-spike.md` (the mod API facts the panel relies on).
 - `test/`: `test_token_report.py` and `test_plan_state.py` (`python3 -m unittest discover -s test`), `panel.test.tsx` (`claude plugin test .`).
-- `.claude/skills/`: repo-local `helper-do-in-my-chrome` and `helper-sql`, not shipped (`README.md:251-255`).
+- `.claude/skills/`: repo-local `helper-do-in-my-chrome` and `helper-sql`, not shipped (`README.md:252-256`).
 - Root: `CLAUDE.md` (starter template), `README.md`, `LICENSE`, `.gitignore`.
 
 ## 4. Main flows
@@ -50,11 +50,11 @@ None. No database, models, schemas or migrations. State lives in markdown files 
 
 ## 7. Tests
 
-`test/` holds tests for `scripts/token-report.py` (`test_token_report.py`), `scripts/plan-state.py` (`test_plan_state.py`) and `hooks/panel.tsx` (`panel.test.tsx`). The README runs them with `python3 -m unittest discover -s test` and `claude plugin test .` (`README.md:248`). There is still no runner config and no CI file (no `.github/`, `.gitlab-ci.yml`, `.pre-commit-config.yaml`, `.husky/`). The README also names `claude plugin validate .` to check the manifests (`README.md:247`).
+`test/` holds tests for `scripts/token-report.py` (`test_token_report.py`), `scripts/plan-state.py` (`test_plan_state.py`) and `hooks/panel.tsx` (`panel.test.tsx`). The README runs them with `python3 -m unittest discover -s test` and `claude plugin test .` (`README.md:249`). There is still no runner config and no CI file (no `.github/`, `.gitlab-ci.yml`, `.pre-commit-config.yaml`, `.husky/`). The README also names `claude plugin validate .` to check the manifests (`README.md:248`).
 
 ## 8. Commands
 
-`CLAUDE.md` has no `## Commands` section (init skipped it because the file exists). The README names `claude plugin validate .` (`README.md:247`), `claude --plugin-dir .` for local edits (`README.md:246`), and the tests: `python3 -m unittest discover -s test` and `claude plugin test .` (`README.md:248`). No lint, typecheck or build command exists.
+`CLAUDE.md` has no `## Commands` section (init skipped it because the file exists). The README names `claude plugin validate .` (`README.md:248`), `claude --plugin-dir .` for local edits (`README.md:247`), and the tests: `python3 -m unittest discover -s test` and `claude plugin test .` (`README.md:249`). No lint, typecheck or build command exists.
 
 ## 9. Conventions
 
