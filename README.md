@@ -50,6 +50,27 @@ Anything that already exists is skipped, and nothing is committed. Review the fi
 Headless runs (`claude -p`) need `--add-dir <plugin folder>`, because the starter `CLAUDE.md` lives in the plugin
 folder. An interactive session asks once instead.
 
+## Entry points
+
+Three ways in. They run the same phases, and differ in how much you take part.
+
+| Entry point | You take part in | Start with |
+|---|---|---|
+| `/moonlight:sdlc-brainstorm` (standard) | grilling of the idea, plan review, following the implementation steps, acceptance | an idea |
+| `/moonlight:moonlight-fast <requirement>` | grilling of the idea, plan review, acceptance | a requirement text |
+| `/moonlight:moonlight-calm <requirement>` | the idea, then acceptance | a requirement text |
+
+Phases, in every flow: 1 idea → 2 design (plan, proposed spec, plan review) → 3 implementation (TDD, on a feature branch)
+→ 4 code review → 5 validation and acceptance → 6 documentation and specs → 7 check (token use) → 8 close.
+
+`moonlight-calm` uses two stand-in agents, `sdlc-stand-in-product-owner` and `sdlc-stand-in-tech-lead`, instead of
+asking you. Every decision goes into the plan's `## Decisions` section with its source and confidence. The run stops and
+asks you only when it must escalate: a `low` confidence, a `security`, `auth`, `data-migration`, `breaking-change` or
+`public-api` flag, more than 12 checklist items, two review rounds of requested changes, a blocked implementation, or a
+failed UAT section. It also stops at acceptance.
+
+Commits and merges stay with you in every flow. Claude creates the feature branch and never commits.
+
 ## Adapters
 
 The triage skills need to know where a project's issues live and how to close one. The project says so in a

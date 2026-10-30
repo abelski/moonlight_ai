@@ -73,6 +73,11 @@ Bulleted list of the explicit, user-facing outcomes this plan delivers.
 ### Non-Goals
 Bulleted list of what's explicitly out of scope — bounds the implementer, prevents scope creep.
 
+### Decisions
+The settled answers from grilling or from stand-in agents, one line each: `- [source:confidence] question → answer`.
+Source `user` for answers the user gave, `stand-in` for answers from the stand-in agents. Empty is fine if the plan
+had no open questions.
+
 ### Prototype (optional)
 Only for plans that change what a user sees. Step 0 of Implementation is a static mock of the changed
 screen(s), saved as an HTML file in the project's scratch folder (`/tmp`, per CLAUDE.md). Copy the
@@ -197,6 +202,9 @@ main branch. Idea and plan files were written on main, uncommitted; they carry i
 git checkout -b feat/<N>-<slug>   # feat/<slug> without an idea number; fix/... for kind: bugfix
 ```
 
+Right after the branch is created, set `started_at` in the plan's frontmatter to the current UTC time
+(`date -u +%Y-%m-%dT%H:%M:%SZ`). The token check in Phase 5 counts from it.
+
 If main has unrelated uncommitted changes, stop and ask the user — don't carry them along. Only the
 user commits, merges and pushes (this repo's hook blocks the agent from `git commit`/`git push`).
 
@@ -255,7 +263,10 @@ Once `sdlc-ralph-implement` reports the plan done:
 5. Any project-specific epilogue (announcing the change, notifying someone, closing a linked
    ticket) is the caller's responsibility, not this skill's — `sdlc-ralph-implement` is
    pipeline-agnostic and never publishes or notifies anything on its own.
-6. Hand the branch to the user: tell them how to test it locally and give the commands to run
+6. Check: run the token report for this run and show the totals. The plugin root is two levels above this skill's
+   folder:
+   `python3 <plugin root>/scripts/token-report.py --since <started_at from the plan> --json`.
+7. Hand the branch to the user: tell them how to test it locally and give the commands to run
    once they're happy — `git add -A && git commit -m "feat(<area>): <summary> (#<N>)"`, then
    `git checkout main && git merge --no-ff feat/<N>-<slug>`. If they request changes instead, add
    them as new unchecked items to the plan, set `status: in_progress`, and re-run

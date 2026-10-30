@@ -28,6 +28,10 @@ go, and report back honestly.
    checklist text.
 2. Work through every remaining `- [ ]` item under `## Implementation` (feature plans) or
    `## Fix plan` (bugfix plans), top to bottom, in file order.
+   **Test first.** For each item that changes behavior, write the failing test first, run it, and watch it fail for the
+   reason the item names. Then write the code that makes it pass. For a bugfix, the regression test must fail on the code
+   before the fix. An item that only changes docs, config or data skips this, and the report says so. Never write a test
+   after the code and call it test-first.
 3. **Write through**: the instant one item is genuinely complete, edit the plan file and flip
    that exact line from `- [ ]` to `- [x]` before moving to the next item. Do not batch this at
    the end — if you are interrupted partway, the plan file must accurately reflect exactly what
