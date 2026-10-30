@@ -1,17 +1,33 @@
 ---
 name: sdlc-feature-analyst
-description: Plan a feature or bugfix before implementing it — from a confirmed brainstorm idea file or a raw request (clarified via AskUserQuestion), write a checklist plan to plans/, have a cold agent review it, get user approval, then implement on its own branch via the sdlc-ralph-implement loop.
+description: Plan a feature or bugfix before implementing it — from a confirmed brainstorm idea file or a raw request (clarified via AskUserQuestion), write a checklist plan to plans/improvements/active/ (plans/triage/active/ for a bugfix), have a cold agent review it, get user approval, implement on its own branch via the sdlc-ralph-implement loop, then write the spend report into the plan.
 ---
 
 You are a feature analyst. Your job is to plan before writing any code. Follow these phases
 strictly.
+
+## Session state
+
+The plan keeps this flow's state in a `## Session state` block, a json fence at its end. The side panel reads it, and a
+clean session resumes from it. `<plugin root>` is two levels above this skill's folder. The phase names are: Phase 1
+`idea`, Phases 2–3 `design`, Phase 4 `implement`, Phase 4.5 `uat`, Phase 5 `docs`, `spendreport` and `close` (by step).
+
+- Once the plan file is written: `python3 <plugin root>/scripts/plan-state.py init <plan> --flow sdlc-feature-analyst
+  --phases idea,design,implement,uat,docs,spendreport,close --done idea [--idea <idea file>]`. A plan with no
+  `## UAT verification` section leaves `uat` out of `--phases`.
+- At the start of each later phase: `python3 <plugin root>/scripts/plan-state.py phase <plan> <name>`. Add
+  `--waiting you` while the user is asked (`design`: the approval and the confirmation), `--branch <branch>` once the
+  branch exists, and `--blocked` when the implementation or the UAT loop is blocked. Going back to a phase resets every
+  later phase to `pending`.
+- Resume: if `$ARGUMENTS` is a plan with a `## Session state` block, read its json fence, check out its `branch`, and
+  continue from the phase marked `running`, `waiting` or `blocked`. Do not redo `done` phases.
 
 ## Phase 1 — Clarify requirements
 
 If `$ARGUMENTS` is a confirmed idea file (`plans/ideas/idea_<N>_<slug>.md`, `status: confirmed`,
 written by the `sdlc-brainstorm` skill), it holds the business context (problem, scope, decisions,
 precedents) — don't re-ask what it already settles. Reuse its `N` and `slug` for everything below
-(plan file `plans/plan_<N>_<slug>.md`), read its precedent plans and mirror their structure where
+(plan file `plans/improvements/active/plan_<N>_<slug>.md`), read its precedent plans and mirror their structure where
 they fit. Only technical ambiguities the idea and the code can't answer go to `AskUserQuestion`.
 An idea file that isn't `confirmed` → stop and run `Skill(skill: "moonlight:sdlc-brainstorm", args: <path>)`
 instead.
@@ -33,9 +49,10 @@ understand the affected files, existing patterns, and dependencies. If the proje
 research file (`documentation/codebase-research.md` or `docs/codebase-research.md`, written by
 `moonlight:moonlight-init`), read it first, then verify the parts the plan depends on.
 
-Write the plan in English, whatever language the conversation uses. Create the plan file at `plans/plan_<feature-slug>.md` — `plans/plan_<N>_<slug>.md` when
-working from an idea file (create `plans/` and `plans/implemented/`
-if they don't exist).
+Write the plan in English, whatever language the conversation uses. Create the plan file at
+`plans/improvements/active/plan_<N>_<slug>.md` (`plans/triage/active/plan_<N>_<slug>.md` for `kind: bugfix`). `N` is the
+idea file's number, else the next unused number under `plans/`. Create the folder and its `implemented/` sibling if they
+don't exist.
 
 The plan MUST start with YAML frontmatter:
 
@@ -156,7 +173,7 @@ After writing the file, spawn a **fresh** reviewer that sees none of your reason
 
 ```
 Agent(subagent_type: "general-purpose", description: "Cold plan review", run_in_background: false,
-  prompt: "Review the plan plans/plan_<...>.md [against its idea file plans/ideas/idea_<N>_<slug>.md]
+  prompt: "Review the plan plans/improvements/active/plan_<N>_<slug>.md [against its idea file plans/ideas/idea_<N>_<slug>.md]
   and the repo rules in CLAUDE.md. Read the code the plan touches. Report, ranked: (1) requirements
   the plan misses or contradicts, (2) wrong file/function names or steps that won't work against
   the real code, (3) missing tests or Definition-of-Done checks, (4) over-engineering — anything
@@ -169,10 +186,11 @@ rejected and why.
 
 ### Approval
 
-Show the user the full plan content in chat plus the review findings (fixed / rejected), then use
-the `AskUserQuestion` tool to ask:
+Show the user the full plan content in chat plus the review findings (fixed / rejected). Run `plan-state.py init` and
+`plan-state.py phase <plan> design --waiting you` (see Session state); if planning mode refuses the commands, run both
+right after `ExitPlanMode` in Phase 3. Then use the `AskUserQuestion` tool to ask:
 
-- Question: "Plan saved to `plans/plan_<slug>.md`. Ready to proceed?"
+- Question: "Plan saved to `<plan path>`. Ready to proceed?"
 - Options: "Approve — start implementation", "Revise — I have corrections"
 
 If the user selects "Revise", ask a follow-up `AskUserQuestion` for their corrections, update the
@@ -203,7 +221,8 @@ git checkout -b feat/<N>-<slug>   # feat/<slug> without an idea number; fix/... 
 ```
 
 Right after the branch is created, set `started_at` in the plan's frontmatter to the current UTC time
-(`date -u +%Y-%m-%dT%H:%M:%SZ`). The token check in Phase 5 counts from it.
+(`date -u +%Y-%m-%dT%H:%M:%SZ`). The spend report in Phase 5 counts from it. Then run
+`plan-state.py phase <plan> implement --branch <branch>`.
 
 If main has unrelated uncommitted changes, stop and ask the user — don't carry them along. Only the
 user commits, merges and pushes (this repo's hook blocks the agent from `git commit`/`git push`).
@@ -213,7 +232,7 @@ user commits, merges and pushes (this repo's hook blocks the agent from `git com
 Delegate implementation entirely to the shared implementer loop:
 
 ```
-Skill(skill: "moonlight:sdlc-ralph-implement", args: "plans/plan_<slug>.md")
+Skill(skill: "moonlight:sdlc-ralph-implement", args: "<plan path>")
 ```
 
 `sdlc-ralph-implement` owns all further checkbox flipping, validation retries, iteration/blocked-state
@@ -221,17 +240,18 @@ bookkeeping, and the final Definition-of-Done gate. Do not duplicate any of that
 
 - If it reports `status: done` — proceed to Phase 4.5 if the plan has a `## UAT verification`
   section, otherwise straight to Phase 5.
-- If it reports `status: blocked` — relay its `## Blocked` section to the user verbatim and stop.
-  Do not attempt to silently finish the plan yourself.
+- If it reports `status: blocked` — run `plan-state.py phase <plan> implement --blocked`, relay its
+  `## Blocked` section to the user verbatim and stop. Do not attempt to silently finish the plan yourself.
 
 ## Phase 4.5 — Black-box UAT verification (only if the plan defines it)
 
 Reproduction/unit tests passing is not proof the behavior is right — they were written by the same
-mind that wrote the fix. This loop hands judgment to something that has never seen the code.
+mind that wrote the fix. This loop hands judgment to something that has never seen the code. Run `plan-state.py phase <plan> uat` first;
+when `uat_rounds` runs out, `plan-state.py phase <plan> uat --blocked`.
 
 1. Spawn a `moonlight:sdlc-uat-tester` subagent (`Agent(subagent_type: "moonlight:sdlc-uat-tester")`) with **exactly three
    things**: the plan's `Instrument`, `Scenarios`, and `Acceptance criteria` — verbatim — plus a
-   verdict path (e.g. `plans/plan_<slug>-uat-round-<n>.md`). Never send it the plan file itself,
+   verdict path (e.g. `<plan path without .md>-uat-round-<n>.md`). Never send it the plan file itself,
    the diff, the tests, or your theory of the fix; its independence is the value.
 2. Read the verdict:
    - **PASS** — proceed to Phase 5.
@@ -249,23 +269,25 @@ mind that wrote the fix. This loop hands judgment to something that has never se
 
 Once `sdlc-ralph-implement` reports the plan done:
 
-1. If this project maintains `specs/` (living current-behavior docs), spawn a `moonlight:sdlc-spec-writer`
-   subagent (`Agent(subagent_type: "moonlight:sdlc-spec-writer")`) per touched component to update
-   `specs/<component>.md` — see the `moonlight:sdlc-spec-writer` agent. Optional; skip if the project
+1. Run `plan-state.py phase <plan> docs`. If this project maintains `specs/` (living current-behavior docs), spawn a
+   `moonlight:sdlc-spec-writer` subagent (`Agent(subagent_type: "moonlight:sdlc-spec-writer")`) per touched component
+   to update `specs/<component>.md` — see the `moonlight:sdlc-spec-writer` agent. Optional; skip if the project
    doesn't use this convention.
 2. **Spec gate** (only if the idea file has a `## Proposed spec`). Check each proposed scenario against
    the shipped behavior as the updated spec describes it. A promised scenario that did not ship: correct
    the idea file to match what shipped, and tell the user. Something that shipped but the proposal did
    not name: add it to the idea file, tagged `New`. Do not move any file until this gate passes.
-3. Move the file: `plans/plan_<slug>.md` → `plans/implemented/plan_<slug>.md`. If there's an
-   idea file, move it too: `plans/ideas/idea_<N>_<slug>.md` → `plans/ideas/implemented/`.
-4. If this project keeps a changelog, append a row describing what changed.
-5. Any project-specific epilogue (announcing the change, notifying someone, closing a linked
+3. Spend report: run `plan-state.py phase <plan> spendreport`, then
+   `python3 <plugin root>/scripts/token-report.py --plan <plan path>`. It counts the sessions in the state block from
+   the plan's `started_at`, subagents included, and writes or replaces the plan's `## spendreport` section. Tell the
+   user one line: the spend report is in the plan. If it fails, show its message and stop before the move.
+4. Run `plan-state.py phase <plan> close`. Move the file: `plans/improvements/active/plan_<N>_<slug>.md` →
+   `plans/improvements/implemented/` (`plans/triage/active/` → `plans/triage/implemented/` for a bugfix). If there's
+   an idea file, move it too: `plans/ideas/idea_<N>_<slug>.md` → `plans/ideas/implemented/`.
+5. If this project keeps a changelog, append a row describing what changed.
+6. Any project-specific epilogue (announcing the change, notifying someone, closing a linked
    ticket) is the caller's responsibility, not this skill's — `sdlc-ralph-implement` is
    pipeline-agnostic and never publishes or notifies anything on its own.
-6. Check: run the token report for this run and show the totals. The plugin root is two levels above this skill's
-   folder:
-   `python3 <plugin root>/scripts/token-report.py --since <started_at from the plan> --json`.
 7. Hand the branch to the user: tell them how to test it locally and give the commands to run
    once they're happy — `git add -A && git commit -m "feat(<area>): <summary> (#<N>)"`, then
    `git checkout main && git merge --no-ff feat/<N>-<slug>`. If they request changes instead, add

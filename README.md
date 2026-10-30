@@ -18,7 +18,10 @@ claude plugin install moonlight@moonlight
 Then, in an existing project, run `/moonlight:moonlight-init` once. For a new project, see
 [Start a new project](#start-a-new-project). For a new feature, pick an [entry point](#entry-points).
 
-Requirements: `jq` (the git-safety hook reads its input with it) and `python3` (the reminders hook).
+Requirements: `jq` (the git-safety hook reads its input with it) and `python3` (the reminders hook, the session state
+and the spend report). The side panel is a Claude Code mod, built on early-access function hooks and checked on Claude
+Code 2.1.314. It draws in the terminal only, and Claude Code may ask you once to enable it. Without it, every flow still
+works.
 
 ## Install and update
 
@@ -54,8 +57,24 @@ Every flow runs these phases:
 4. **Code review**.
 5. **Validation and acceptance**.
 6. **Documentation and specs**.
-7. **Check**: the token use of the run.
+7. **Spend report**: the token totals of the task, written into the plan as `## spendreport`.
 8. **Close**.
+
+The bug flow (`sdlc-fix-issue-from-triage`) has its own steps, and writes the spend report too, before it resolves the
+issue in the tracker.
+
+### Session state and spend report
+
+While a flow runs, the plan file ends with a `## Session state` block: a fenced `json` block with the flow, the current
+phase, each phase's status (`pending`, `running`, `waiting`, `blocked`, `done`), who waits (`you` or nobody), the
+session ids with their start times, the branch and the idea file. No token numbers. The flows write it with
+`scripts/plan-state.py` (`init` once the plan exists, `phase` at the start of each phase). A clean session given the plan
+reads the block and continues from the recorded phase.
+
+At the end, `scripts/token-report.py --plan <plan>` counts every session in the block from the plan's `started_at`,
+subagents included, and writes the plan's `## spendreport` section: messages, input, cache writes, cache reads, output
+and the billable total. Nothing is printed to chat. The count covers everything in those sessions since `started_at`,
+also unrelated work done in the same session.
 
 ### What `moonlight-calm` does on its own
 
@@ -117,6 +136,26 @@ project says so in a `## Moonlight adapters` section of its `CLAUDE.md`, one `Ke
 If a key is missing or set to `(not set)`, the skill asks you instead of guessing a command. Commands read
 secrets from the environment or `.env`. The section names variables, never values.
 
+## Adapt it to your project
+
+Do not copy or edit plugin files. Skills are namespaced `moonlight:<name>`, so a copy in `.claude/skills/` does not
+replace the plugin skill, and a plugin update never reaches it. A project changes the plugin from its own files, in
+four layers. Use the first one that works.
+
+| Layer | Where | Use it for |
+|---|---|---|
+| Values | `## Commands` and `## Moonlight adapters` in `CLAUDE.md` | The test, lint and build commands, and the issue tracker. The planner copies `## Commands` into each plan's Validation and Definition of Done. |
+| Rules | the rest of `CLAUDE.md` | Rules the project never breaks, for example "UI changes are checked in RU and EN at 375px". The planner copies them into each plan's `### Standing constraints`. |
+| Gates | hooks in the project's `.claude/settings.json` | "Never" rules, such as blocking a production deploy command. A gate is code, not a sentence in `CLAUDE.md`. |
+| Wrappers | a project skill with its own name | A different order of steps. It calls `Skill(skill: "moonlight:<name>")` and adds steps before or after. |
+
+Fixed, the project cannot change them:
+
+- Commit and push are always the user's. The git-safety hook enforces it.
+- The layout and file names under `plans/`. The skills read and write them.
+
+Last resort: copy a skill under another name, note the plugin version it came from, and merge later changes yourself.
+
 ## Skills
 
 ### Feature pipeline
@@ -173,6 +212,22 @@ Agents run inside skills. You do not call them directly.
 |---|---|---|
 | `block-git-commit-push.sh` | PreToolUse on Bash | Blocks `git commit` and `git push` from Claude, and the destructive commands `reset --hard`, `clean -f`, `branch -D`, `checkout .` and `restore .`. |
 | `reminders.py` | SessionStart | Shows the lines in `plans/reminders.md` that are due within 3 days. |
+| `panel.tsx` | Mod (function hooks) | The side panel, below. |
+
+### Side panel
+
+The panel opens by itself in a terminal session while a plan in `plans/improvements/active/` or `plans/triage/active/`
+holds a `## Session state` block; the newest such plan wins. It shows the flow and the time since `started_at`, each
+phase with its status, a `you` mark on the phase that waits for you, the tokens of each subagent, and a running total
+split into input, cache and output. Phases redraw every few seconds; tokens every 30 seconds and when a turn ends.
+
+- `/moonlight-panel` hides it and brings it back. Closing it with its close mark hides it too.
+- On a narrow terminal (under 144 columns) Claude Code holds the pane back until there is room, or until you run
+  `/moonlight-panel`.
+- It closes when the plan moves to `implemented/`, or when the plan is `status: done` and its flow reached the last
+  phase.
+
+What was checked about the mod API, and what was not, is in [docs/panel-spike.md](docs/panel-spike.md).
 
 ## Output style
 
@@ -190,6 +245,7 @@ itself does not load this file into its own sessions.
 
 - Test local edits without installing: `claude --plugin-dir .` from this repo.
 - Check the manifests: `claude plugin validate .`.
+- Run the tests: `python3 -m unittest discover -s test` (the scripts) and `claude plugin test .` (the panel).
 - Use the plugin in this repo as well: install it from the local clone (see [Install and update](#install-and-update)).
 
 ## Not in the plugin yet
@@ -206,3 +262,4 @@ These stay in this repo's `.claude/` folder and are not installed by the plugin:
 | [docs/third-party.md](docs/third-party.md) | Attribution for material adapted from Matt Pocock's skills and HumanLayer's `show-me`. Both MIT. |
 | [docs/skill-authoring.md](docs/skill-authoring.md) | The Agent Skills convention, and where skills live in this repo. |
 | [docs/patterns.md](docs/patterns.md) | Heavier patterns seen elsewhere, as pointers to their source. |
+| [docs/panel-spike.md](docs/panel-spike.md) | What the side panel relies on in the mod API, and what is still unchecked. |

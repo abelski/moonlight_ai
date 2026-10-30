@@ -7,6 +7,21 @@ Fix a triaged issue by following its pre-written plan from `plans/triage/active/
 knows nothing about any *specific* tracker — Step 6 runs the project's `Resolve in
 tracker` command from `## Moonlight adapters` in `CLAUDE.md`.
 
+## Session state
+
+The plan keeps this flow's state in a `## Session state` block, a json fence at its end. The side panel reads it, and a
+clean session resumes from it. `<plugin root>` is two levels above this skill's folder. The phase names are: Step 1
+`locate`, Step 2 `reproduce`, Step 3 `fix`, Steps 3b and 4 `red-check`, Step 5 `confirm`, Step 6 `spendreport` and
+`close` (by item).
+
+- Once the plan is located (Step 1): `python3 <plugin root>/scripts/plan-state.py init <plan> --flow
+  sdlc-fix-issue-from-triage --phases locate,reproduce,fix,red-check,confirm,spendreport,close`.
+- At the start of each later step: `python3 <plugin root>/scripts/plan-state.py phase <plan> <name>`. Add
+  `--waiting you` while the user is asked (`confirm`), `--branch <branch>` once the branch exists, and `--blocked` when
+  the fix is blocked. Going back to a step resets every later one to `pending`.
+- Resume: if the located plan already has a `## Session state` block, read its json fence, check out its `branch`, and
+  continue from the phase marked `running`, `waiting` or `blocked`. Do not redo `done` phases.
+
 ## Step 1 — Locate the plan file
 
 If `$ARGUMENTS` is provided, treat it as an issue number (e.g. `35`) or partial filename.
@@ -23,12 +38,14 @@ unapproved).
 
 Then create the fix's own branch before any code edit — never fix on the main branch:
 `git checkout -b fix/<N>-<slug>` (slug from the plan filename). If main has unrelated uncommitted
-changes, stop and ask the user first.
+changes, stop and ask the user first. Right after the branch is created, add `started_at` to the plan's
+frontmatter, set to the current UTC time (`date -u +%Y-%m-%dT%H:%M:%SZ`); the spend report in Step 6 counts from it.
+Then run `plan-state.py phase <plan> locate --branch fix/<N>-<slug>`.
 
 ## Step 2 — Reproduce the reported symptom
 
-Before delegating, reproduce the symptom through the project's real path: call the endpoint, run the
-command, or load the page, and read the output or the server log. Write what you observed as a
+Run `plan-state.py phase <plan> reproduce`. Before delegating, reproduce the symptom through the project's real
+path: call the endpoint, run the command, or load the page, and read the output or the server log. Write what you observed as a
 `Reproduced:` line under the plan's `## Root cause`. If it does not reproduce, or the real cause
 differs from `## Root cause`, the plan is a hypothesis: correct it in place with a dated `CORRECTION`
 note, keep the original analysis, and tell the user before implementing anything.
@@ -42,9 +59,11 @@ Skill(skill: "moonlight:sdlc-ralph-implement", args: "plans/triage/active/issue-
 `sdlc-ralph-implement` reads the plan's `## Root cause` and `## Fix plan` checklist, applies each item,
 then works through `## Tests`, running real commands and retrying failures up to the plan's
 `max_iterations` before giving up. It owns all checkbox flipping, retry/iteration bookkeeping, and
-the final `## Definition of Done` gate. Do not duplicate any of that logic here.
+the final `## Definition of Done` gate. Do not duplicate any of that logic here. Run
+`plan-state.py phase <plan> fix` first.
 
-- If it reports `status: blocked` — relay its `## Blocked` section to the user verbatim and stop.
+- If it reports `status: blocked` — run `plan-state.py phase <plan> fix --blocked`, relay its `## Blocked`
+  section to the user verbatim and stop.
   Do not attempt to silently finish the fix yourself.
 - If it reports `status: done` and the plan has a `## UAT verification` section — run the same
   Phase 4.5 black-box loop `sdlc-feature-analyst` uses (spawn `moonlight:sdlc-uat-tester`, retry via
@@ -55,8 +74,8 @@ the final `## Definition of Done` gate. Do not duplicate any of that logic here.
 
 ## Step 3b — Red check on the regression test
 
-Once the delegation reports `status: done`, the plan's `## Tests` must include a regression test for the
-reported symptom. Confirm that it can fail. Create a temporary worktree at the base commit
+Run `plan-state.py phase <plan> red-check`. Once the delegation reports `status: done`, the plan's `## Tests`
+must include a regression test for the reported symptom. Confirm that it can fail. Create a temporary worktree at the base commit
 (`git worktree add <tmp-dir> <base>`), copy the new test into it, and run it there. It must fail for the
 reported reason. Never use `git stash` or `reset` on the user's uncommitted work. A test that passes on
 the unfixed code guards nothing: rewrite it, then run the delegation again. Remove the worktree afterwards.
@@ -71,7 +90,7 @@ replacement for it, and not worth inventing a check that doesn't already fit the
 
 ## Step 5 — Confirm resolution with user
 
-Use `AskUserQuestion` to ask:
+Run `plan-state.py phase <plan> confirm --waiting you`, then use `AskUserQuestion` to ask:
 - Question: `"Issue #<N> — <one-line summary of what was fixed>. Mark as resolved?"`
 - Options: `"Yes — mark resolved"`, `"No — something looks wrong"`
 
@@ -82,15 +101,20 @@ investigate.
 
 Only if the user selected **Yes**:
 
-1. Read the `Resolve in tracker` key under `## Moonlight adapters` in this project's `CLAUDE.md`. If the key is
-   missing or `(not set)`, stop this step and ask the user how this issue gets resolved. Do not guess a command.
-   Otherwise run the command with the issue id.
-2. Notifications: read the `Notify on resolve` key. `yes` means the resolve command already notifies the reporter;
+1. Spend report, before the tracker: run `plan-state.py phase <plan> spendreport`, then
+   `python3 <plugin root>/scripts/token-report.py --plan <plan path>`. It counts the sessions in the state block from
+   the plan's `started_at`, subagents included, and writes or replaces the plan's `## spendreport` section. Tell the
+   user one line: the spend report is in the plan. If it fails, show its message and stop: the tracker stays
+   unresolved and the plan stays in `active/`.
+2. Run `plan-state.py phase <plan> close`. Read the `Resolve in tracker` key under `## Moonlight adapters` in this
+   project's `CLAUDE.md`. If the key is missing or `(not set)`, stop this step and ask the user how this issue gets
+   resolved. Do not guess a command. Otherwise run the command with the issue id.
+3. Notifications: read the `Notify on resolve` key. `yes` means the resolve command already notifies the reporter;
    say so in the report. `no`, or a missing value, means nothing is sent; say that in the report, and let the user
    decide who tells the reporter. Never send a notice from this skill.
-3. Move the plan file: `plans/triage/active/issue-<N>-*.md` →
+4. Move the plan file: `plans/triage/active/issue-<N>-*.md` →
    `plans/triage/implemented/IMPLEMENTED-issue-<N>-*.md`.
-4. Report: "Issue #<N> marked resolved. Plan moved to `implemented/`." plus the commands for the
+5. Report: "Issue #<N> marked resolved. Plan moved to `implemented/`." plus the commands for the
    user to run — `git add -A && git commit -m "fix(<area>): <summary> (issue #<N>)"`, then
    `git checkout main && git merge --no-ff fix/<N>-<slug>`. Only the user commits and merges.
 
